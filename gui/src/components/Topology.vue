@@ -44,20 +44,72 @@
         v-bind="slotProps"
       />
     </template>
+
+    <template #edge-label="{ edgeId, edge, scale, ...slotProps }">
+      <v-edge-label
+        :text="`${traffics[edge.source][edge.target]}`"
+        align="source"
+        vertical-align="above"
+        v-bind="slotProps"
+        fill="#ff5500"
+        :font-size="12 * scale"
+      />
+    </template>
   </v-network-graph>
 </template>
 
 <script lang="ts">
-import useTopology from '@/composables/useApi'
+import useTopology from '@/composables/useApi.ts'
 
+import { onMounted, reactive, ref } from 'vue'
+import axios from 'axios'
+import type { AxiosResponse } from 'axios'
+import type { HostType } from '@/types/responses/hostType'
+
+import { formatBytes } from '@/lib/helpers'
 export default {
   setup() {
-    const { nodes, edges, configs } = useTopology()
+    const hostsData = ref<HostType[]>([])
+
+    const { nodes, edges, configs, traffics } = useTopology()
+
+    const webSocket = new WebSocket('ws://127.0.0.1:8080/simpleswitch/ws')
+
+    onMounted(async () => {
+      const { data }: AxiosResponse<HostType[]> = await axios.get(
+        'http://127.0.0.1:8080/v1.0/topology/hosts'
+      )
+
+      hostsData.value = data
+    })
+
+    webSocket.onmessage = function (event) {
+      const d = JSON.parse(event.data)
+      if (d.method == 'event_switch-stats') {
+        const { data } = d
+
+        const trafic = traffics.value[data.switch]
+
+        const switchId = data.switch.replace('switch-', '')
+
+        const host = hostsData.value.find((i: HostType) => {
+          return i.port.dpid == switchId && i.port.port_no == data.port
+        })
+
+        if (host) {
+          traffics.value[data.switch][`host-${host.mac}`] = formatBytes(
+            data.speed_in
+          )
+        }
+      }
+    }
 
     return {
       nodes,
       edges,
       configs,
+      traffics,
+      hostsData,
     }
   },
 }

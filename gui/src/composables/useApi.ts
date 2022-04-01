@@ -1,20 +1,23 @@
 import axios from 'axios'
 import type { AxiosResponse } from 'axios'
-import type { SwitchType } from "@/types/responses/switchType";
-import type { LinkType } from "@/types/responses/linkType";
-import type { HostType } from "@/types/responses/hostType";
+import type { SwitchType } from '@/types/responses/switchType'
+import type { LinkType } from '@/types/responses/linkType'
+import type { HostType } from '@/types/responses/hostType'
 
+import { onMounted, ref, reactive } from 'vue'
+import { v4 as uuidv4 } from 'uuid'
+import { defineConfigs } from 'v-network-graph'
+import { ForceLayout } from 'v-network-graph/lib/force-layout'
 
-import { onMounted, ref, reactive } from "vue";
-import { v4 as uuidv4 } from "uuid";
-import { defineConfigs } from "v-network-graph";
-import { ForceLayout } from "v-network-graph/lib/force-layout";
+type TrafficData = Record<string, Record<string, number>>
 
-
-export default ():any => {
+export default (): any => {
   const nodes = ref({})
   const edges = ref({})
   const hosts = ref<HostType[]>([])
+  const traffics = ref<TrafficData>({})
+
+  let hostsData
 
   const configs = reactive(
     defineConfigs({
@@ -69,6 +72,7 @@ export default ():any => {
       obj[index] = {
         source: `switch-${i.src.dpid}`,
         target: `switch-${i.dst.dpid}`,
+        label: '100mb',
       }
       return obj
     }, {})
@@ -91,16 +95,47 @@ export default ():any => {
       obj[index] = {
         source: `switch-${i.port.dpid}`,
         target: `host-${i.mac}`,
+        port: i.port.port_no
       }
       return obj
     }, {})
 
     edges.value = { ...switchEdges, ...hostEdges }
+
+    const swtichesTraffic = nodesResponse.reduce((obj, i) => {
+      const index = `switch-${i.dpid}`
+
+      const switchTraffics = Object.entries({
+        ...switchEdges,
+        ...hostEdges,
+      }).filter(item => {
+        return item[1].source == `switch-${i.dpid}`
+      })
+
+      const switchTrafficsObject = switchTraffics.reduce(
+        (obj2: any, j: any) => {
+          const indx = j[1].target
+
+          obj2[indx] = 0
+
+          return obj2
+        },
+        {}
+      );
+
+      obj[index] = switchTrafficsObject
+      return obj
+    }, {})
+
+    
+
+    traffics.value = { ...swtichesTraffic }
   })
 
   return {
     nodes,
     edges,
-    configs
+    configs,
+    traffics,
   }
 }
