@@ -1,5 +1,5 @@
 <template>
-  <v-network-graph :nodes="nodes" :edges="edges" :configs="configs">
+  <v-network-graph :nodes="nodes" :edges="edges" >
     <!-- Use CSS to define references to external fonts.
          To use CSS within SVG, use <defs>. -->
     <defs>
@@ -55,6 +55,15 @@
         :font-size="12 * scale"
       />
     </template>
+
+    <template #edges-label="{ edges, ...slotProps }">
+      <v-edge-label
+        :text="summarizedEdgeLabel(edges)"
+        align="center"
+        vertical-align="above"
+        v-bind="slotProps"
+      />
+    </template>
   </v-network-graph>
 </template>
 
@@ -103,13 +112,19 @@ export default {
         }
       }
     }
+    
 
+    const  summarizedEdgeLabel =  (edges: Record<string, Edge>) =>  {
+        const edgeList = Object.values(edges)
+        return ``
+    }
     return {
       nodes,
       edges,
       configs,
       traffics,
       hostsData,
+      summarizedEdgeLabel
     }
   },
 }

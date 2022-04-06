@@ -17,8 +17,14 @@ class fatTreeTopo(Topo):
         #Add hosts
         h1 = self.addHost('h1', cls=Host, ip='10.0.0.1', defaultRoute=None)
         h2 = self.addHost('h2', cls=Host, ip='10.0.0.2', defaultRoute=None)
-        h4 = self.addHost('h4', cls=Host, ip='10.0.0.4', defaultRoute=None)
         h3 = self.addHost('h3', cls=Host, ip='10.0.0.3', defaultRoute=None)
+        h4 = self.addHost('h4', cls=Host, ip='10.0.0.4', defaultRoute=None)
+        h5 = self.addHost('h5', cls=Host, ip='10.0.0.5', defaultRoute=None)
+        h6 = self.addHost('h6', cls=Host, ip='10.0.0.6', defaultRoute=None)
+
+
+        # h4 = self.addHost('h4', cls=Host, ip='10.0.0.4', defaultRoute=None)
+        # h3 = self.addHost('h3', cls=Host, ip='10.0.0.3', defaultRoute=None)
 
         # h5 = self.addHost('h3', cls=Host, ip='10.0.0.5', defaultRoute=None)
         # h6 = self.addHost('h3', cls=Host, ip='10.0.0.6', defaultRoute=None)
@@ -28,7 +34,6 @@ class fatTreeTopo(Topo):
 
         #Add switches
         s1 = self.addSwitch('s1', cls=OVSKernelSwitch)
-        s2 = self.addSwitch('s2', cls=OVSKernelSwitch)
         # s3 = self.addSwitch('s3', cls=OVSKernelSwitch)
 
 
@@ -36,15 +41,18 @@ class fatTreeTopo(Topo):
         #Add links
         self.addLink(h1, s1)
         self.addLink(h2, s1)
+        self.addLink(h3, s1)
+        self.addLink(s1, h4)
+        self.addLink(s1, h5)
+        self.addLink(s1, h6)
 
-        self.addLink(h3, s2)
-        self.addLink(h4, s2)
+
 
         # self.addLink(h5, s3)
         # self.addLink(h6, s3)
 
 
-        self.addLink(s1, s2)
+        # self.addLink(s1, s2)
         # self.addLink(s2, s3)
 
 

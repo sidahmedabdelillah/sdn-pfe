@@ -7,10 +7,14 @@ import router from "./router";
 import VNetworkGraph from "v-network-graph";
 import "v-network-graph/lib/style.css";
 
-import PrimeVue from "primevue/config";
+import Vuesax from 'vuesax3';
+import 'vuesax3/dist/vuesax.css'; //Vuesax styles
+
+
 
 const app = createApp(App);
-app.use(PrimeVue);
+
+app.use(Vuesax);
 
 app.use(createPinia());
 app.use(router);
