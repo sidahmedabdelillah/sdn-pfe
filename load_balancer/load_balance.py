@@ -1,5 +1,3 @@
-
-
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
@@ -13,26 +11,34 @@ from ryu.lib.packet.ether_types import ETH_TYPE_IP
 from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
 
-
 class SimpleSwitch13(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
+    # server virtual IP
     VIRTUAL_IP = '10.0.0.100'  # The virtual server IP
 
+    # srver 1 config
     SERVER1_IP = '10.0.0.5'
-    SERVER1_MAC = '00:00:00:00:00:05'
+    SERVER1_MAC = 'da:61:03:12:b4:2a'
     SERVER1_PORT = 5
+
+    #server 2 config
     SERVER2_IP = '10.0.0.6'
-    SERVER2_MAC = '00:00:00:00:00:06'
+    SERVER2_MAC = '2a:94:48:56:c9:26'
     SERVER2_PORT = 6
+
+    # mac table 
     ip_to_mac = {"10.0.0.1": "00:00:00:00:00:01",
                  "10.0.0.2": "00:00:00:00:00:02",
                  "10.0.0.3": "00:00:00:00:00:03",
                  "10.0.0.4": "00:00:00:00:00:04"}
+
+
     def __init__(self, *args, **kwargs):
         super(SimpleSwitch13, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
-
+    
+    # table-miss flow
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         datapath = ev.msg.datapath
@@ -51,8 +57,12 @@ class SimpleSwitch13(app_manager.RyuApp):
                                           ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 0, match, actions)
 
+    # add flow function 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
+        self.logger.info('adding-flow')
+        # open-flow protocol
         ofproto = datapath.ofproto
+        # open-flow parser
         parser = datapath.ofproto_parser
 
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
@@ -66,6 +76,7 @@ class SimpleSwitch13(app_manager.RyuApp):
                                     match=match, instructions=inst)
         datapath.send_msg(mod)
 
+    # handle packetIn event (no flow match)
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
         # If you hit this you might want to increase
@@ -73,34 +84,53 @@ class SimpleSwitch13(app_manager.RyuApp):
         if ev.msg.msg_len < ev.msg.total_len:
             self.logger.debug("packet truncated: only %s of %s bytes",
                               ev.msg.msg_len, ev.msg.total_len)
+        # event message
         msg = ev.msg
+        # event datapath (switch)
         datapath = msg.datapath
+        # event openflow protocol
         ofproto = datapath.ofproto
+        # protocol parser
         parser = datapath.ofproto_parser
-        in_port = msg.match['in_port']
 
+        # in port 
+        in_port = msg.match['in_port']
+        
+        # packet
         pkt = packet.Packet(msg.data)
+        # ethernet frame
         eth = pkt.get_protocols(ethernet.ethernet)[0]
 
+
         if eth.ethertype == ether_types.ETH_TYPE_LLDP:
-            # ignore lldp packet
+            # ignore lldp packet (discoery)
             return
+        
+        # destination mac_address
         dst_mac = eth.dst
+        # source mac_address
         src_mac = eth.src
 
+        # datapath_id (switch_id)
         dpid = datapath.id
+
+        # get the mac table for the switch_id otherwise set it to empy dict
         self.mac_to_port.setdefault(dpid, {})
 
+        # log the packet "packet in switch_id source_mac destination_mac in_port"
         self.logger.info("packet in %s %s %s %s", dpid, src_mac, dst_mac, in_port)
 
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src_mac] = in_port
-
+        
         if dst_mac in self.mac_to_port[dpid]:
+            # if the destination mac is previously learned get it from the dict
             out_port = self.mac_to_port[dpid][dst_mac]
         else:
+            # else flood the packet
             out_port = ofproto.OFPP_FLOOD
 
+        # set the action to output from the port (mac_port or flood)
         actions = [parser.OFPActionOutput(out_port)]
 
         # install a flow to avoid packet_in next time
@@ -135,8 +165,12 @@ class SimpleSwitch13(app_manager.RyuApp):
             self.logger.info("***************************")
             self.logger.info("---Handle TCP Packet---")
             ip_header = pkt.get_protocol(ipv4.ipv4)
+            self.logger.info(ip_header)
 
+            # send to the function
+            # handle_tcp_packet(self, datapath, in_port, ip_header, parser, dst_mac, src_mac):
             packet_handled = self.handle_tcp_packet(datapath, in_port, ip_header, parser, dst_mac, src_mac)
+            self.logger.info("my-log in_port=%s ,  eth_type=%s , ip_proto=%s ,ipv4_dst=%s", in_port, ETH_TYPE_IP, ip_header.proto, self.VIRTUAL_IP)
             self.logger.info("TCP packet handled: " + str(packet_handled))
             if packet_handled:
                 return
@@ -159,10 +193,17 @@ class SimpleSwitch13(app_manager.RyuApp):
         # Making the load balancer IP as source IP
         src_ip = self.VIRTUAL_IP
 
+        # if (math.random() > 0.5) :
+        #     src_mac = self.SERVER1_MAC
+        # else:
+        #     src_mac = self.SERVER2_MAC
+
+
         if haddr_to_int(arp_target_mac) % 2 == 1:
             src_mac = self.SERVER1_MAC
         else:
             src_mac = self.SERVER2_MAC
+
         self.logger.info("Selected server MAC: " + src_mac)
 
         pkt = packet.Packet()
@@ -178,38 +219,51 @@ class SimpleSwitch13(app_manager.RyuApp):
         self.logger.info("Done with processing the ARP reply packet")
         return pkt
 
+    # function to handle tcp packets
     def handle_tcp_packet(self, datapath, in_port, ip_header, parser, dst_mac, src_mac):
         packet_handled = False
 
+        # if the packet is for the VIRTUAL_IP
         if ip_header.dst == self.VIRTUAL_IP:
             if dst_mac == self.SERVER1_MAC:
+                self.logger.info('packet for server 1')
                 server_dst_ip = self.SERVER1_IP
                 server_out_port = self.SERVER1_PORT
             else:
+                self.logger.info('packet for server 2')
                 server_dst_ip = self.SERVER2_IP
                 server_out_port = self.SERVER2_PORT
 
             # Route to server
-            match = parser.OFPMatch(in_port=in_port, eth_type=ETH_TYPE_IP, ip_proto=ip_header.proto,
-                                    ipv4_dst=self.VIRTUAL_IP)
+            # create a flow match for :
+            #           in_port: in_port
+            #           eth_type: ip
+            #           ip_propotocl: protocol_header
+            #           ipv4 _dst= 10.0.0.100
+
+            match = parser.OFPMatch(in_port=in_port, eth_type=ETH_TYPE_IP, ipv4_dst=self.VIRTUAL_IP)
+
 
             actions = [parser.OFPActionSetField(ipv4_dst=server_dst_ip),
                        parser.OFPActionOutput(server_out_port)]
 
-            self.add_flow(datapath, 20, match, actions)
+            self.logger.warning('adding-flow from handle tcp')
+            self.add_flow(datapath, 15, match, actions)
             self.logger.info("<==== Added TCP Flow- Route to Server: " + str(server_dst_ip) +
                              " from Client :" + str(ip_header.src) + " on Switch Port:" +
                              str(server_out_port) + "====>")
 
             # Reverse route from server
             match = parser.OFPMatch(in_port=server_out_port, eth_type=ETH_TYPE_IP,
-                                    ip_proto=ip_header.proto,
                                     ipv4_src=server_dst_ip,
                                     eth_dst=src_mac)
+                                    
             actions = [parser.OFPActionSetField(ipv4_src=self.VIRTUAL_IP),
                        parser.OFPActionOutput(in_port)]
 
-            self.add_flow(datapath, 20, match, actions)
+            self.logger.warning('adding-flow from handle tcp reverse')
+
+            self.add_flow(datapath, 13, match, actions)
             self.logger.info("<==== Added TCP Flow- Reverse route from Server: " + str(server_dst_ip) +
                              " to Client: " + str(src_mac) + " on Switch Port:" +
                              str(in_port) + "====>")
