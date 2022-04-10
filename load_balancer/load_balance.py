@@ -11,20 +11,24 @@ from ryu.lib.packet.ether_types import ETH_TYPE_IP
 from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
 
+from db import get_servers_from_db
+
 class SimpleSwitch13(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     # server virtual IP
     VIRTUAL_IP = '10.0.0.100'  # The virtual server IP
 
+    servers = get_servers_from_db()
+
     # srver 1 config
     SERVER1_IP = '10.0.0.5'
-    SERVER1_MAC = 'da:61:03:12:b4:2a'
+    SERVER1_MAC = '00:00:00:00:00:05'
     SERVER1_PORT = 5
 
     #server 2 config
     SERVER2_IP = '10.0.0.6'
-    SERVER2_MAC = '2a:94:48:56:c9:26'
+    SERVER2_MAC = '00:00:00:00:00:05'
     SERVER2_PORT = 6
 
     # mac table 
