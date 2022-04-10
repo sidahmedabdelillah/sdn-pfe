@@ -11,7 +11,8 @@ from ryu.lib.packet.ether_types import ETH_TYPE_IP
 from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
 
-from db import get_servers_from_db
+from db import get_server_with_mac, get_servers_from_db, get_server_with_ip
+from random import choice
 
 class SimpleSwitch13(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -21,15 +22,15 @@ class SimpleSwitch13(app_manager.RyuApp):
 
     servers = get_servers_from_db()
 
-    # srver 1 config
-    SERVER1_IP = '10.0.0.5'
-    SERVER1_MAC = '00:00:00:00:00:05'
-    SERVER1_PORT = 5
+    # # srver 1 config
+    # SERVER1_IP = '10.0.0.5'
+    # SERVER1_MAC = '00:00:00:00:00:05'
+    # SERVER1_PORT = 5
 
-    #server 2 config
-    SERVER2_IP = '10.0.0.6'
-    SERVER2_MAC = '00:00:00:00:00:05'
-    SERVER2_PORT = 6
+    # #server 2 config
+    # SERVER2_IP = '10.0.0.6'
+    # SERVER2_MAC = '00:00:00:00:00:05'
+    # SERVER2_PORT = 6
 
     # mac table 
     ip_to_mac = {"10.0.0.1": "00:00:00:00:00:01",
@@ -197,28 +198,29 @@ class SimpleSwitch13(app_manager.RyuApp):
         # Making the load balancer IP as source IP
         src_ip = self.VIRTUAL_IP
 
-        # if (math.random() > 0.5) :
-        #     src_mac = self.SERVER1_MAC
-        # else:
-        #     src_mac = self.SERVER2_MAC
+        # chosing a random server from the servers array
+        chosen_server = choice(self.servers)
+        src_mac = chosen_server.mac
 
 
-        if haddr_to_int(arp_target_mac) % 2 == 1:
-            src_mac = self.SERVER1_MAC
-        else:
-            src_mac = self.SERVER2_MAC
-
+        # logging the chosen mac
         self.logger.info("Selected server MAC: " + src_mac)
 
         pkt = packet.Packet()
+
+        # adding ethernet header to packet (source and destination mac)
         pkt.add_protocol(
             ethernet.ethernet(
                 dst=dst_mac, src=src_mac, ethertype=ether_types.ETH_TYPE_ARP)
         )
+
+        # adding arp response to packet
         pkt.add_protocol(
             arp.arp(opcode=arp.ARP_REPLY, src_mac=src_mac, src_ip=src_ip,
                     dst_mac=arp_target_mac, dst_ip=arp_target_ip)
         )
+
+        # encode the packet for sending
         pkt.serialize()
         self.logger.info("Done with processing the ARP reply packet")
         return pkt
@@ -229,14 +231,18 @@ class SimpleSwitch13(app_manager.RyuApp):
 
         # if the packet is for the VIRTUAL_IP
         if ip_header.dst == self.VIRTUAL_IP:
-            if dst_mac == self.SERVER1_MAC:
-                self.logger.info('packet for server 1')
-                server_dst_ip = self.SERVER1_IP
-                server_out_port = self.SERVER1_PORT
-            else:
-                self.logger.info('packet for server 2')
-                server_dst_ip = self.SERVER2_IP
-                server_out_port = self.SERVER2_PORT
+
+            # find the packet with the chosen mac
+            chosen_server = get_server_with_mac(dst_mac)
+
+            if(not chosen_server):
+                self.logger.error('Requested server Not found')
+                return
+            
+            server_dst_ip = chosen_server.ip
+            server_out_port = chosen_server.port
+
+
 
             # Route to server
             # create a flow match for :
