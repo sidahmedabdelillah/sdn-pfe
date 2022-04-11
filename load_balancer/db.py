@@ -19,7 +19,7 @@ def get_servers_from_db() -> List[Server]:
     
     return servers
 
-def add_to_servers_db(ip,mac,port) -> Server:
+def add_server_to_db(ip,mac,port) -> Server:
     serversDb = db.table('server')
 
     serversDb.insert({"ip" : ip , "mac" : mac , "port" : port})

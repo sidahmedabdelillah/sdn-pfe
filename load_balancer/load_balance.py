@@ -1,3 +1,7 @@
+import json
+from socket import MsgFlag
+from xmlrpc.client import Server
+from ryu.app.wsgi import WSGIApplication
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
@@ -6,47 +10,71 @@ from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ether_types
 from ryu.lib.packet import ipv4
-from ryu.lib.mac import haddr_to_int
 from ryu.lib.packet.ether_types import ETH_TYPE_IP
 from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
+from ryu.app.wsgi import ControllerBase
 
-from db import get_server_with_mac, get_servers_from_db, get_server_with_ip
+
+from typing import List
+
+# import validators
+from ryu.lib.mac import HADDR_PATTERN
+
+from ryu.app.wsgi import route, Response
+
+
+from db import get_server_with_mac, get_servers_from_db, add_server_to_db
+from classes.server import ServerEncoder
+
 from random import choice
+from utls.validators import validate_ip, validate_mac, validate_int
 
-class SimpleSwitch13(app_manager.RyuApp):
+from utls.rest_utils import post_method, create_response
+
+load_balancer_instance_name = "load_balancer"
+
+class LoadBalncer(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
+    
+    _CONTEXTS = {
+        'wsgi': WSGIApplication
+    }
 
     # server virtual IP
     VIRTUAL_IP = '10.0.0.100'  # The virtual server IP
 
-    servers = get_servers_from_db()
+    servers : List[Server] = get_servers_from_db()
+    
+    datapaths = []
 
-    # # srver 1 config
-    # SERVER1_IP = '10.0.0.5'
-    # SERVER1_MAC = '00:00:00:00:00:05'
-    # SERVER1_PORT = 5
-
-    # #server 2 config
-    # SERVER2_IP = '10.0.0.6'
-    # SERVER2_MAC = '00:00:00:00:00:05'
-    # SERVER2_PORT = 6
-
-    # mac table 
-    ip_to_mac = {"10.0.0.1": "00:00:00:00:00:01",
-                 "10.0.0.2": "00:00:00:00:00:02",
-                 "10.0.0.3": "00:00:00:00:00:03",
-                 "10.0.0.4": "00:00:00:00:00:04"}
-
+    mac_to_port = {}
 
     def __init__(self, *args, **kwargs):
-        super(SimpleSwitch13, self).__init__(*args, **kwargs)
-        self.mac_to_port = {}
+        super(LoadBalncer, self).__init__(*args, **kwargs)
+
+        wsgi = kwargs['wsgi']
+        wsgi.register(LoadBalncerRest, {load_balancer_instance_name: self})
+    
+    def delete_flow(self, datapath):
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+
+        for dst in self.mac_to_port[datapath.id].keys():
+            match = parser.OFPMatch(eth_dst=dst)
+            mod = parser.OFPFlowMod(
+                datapath, command=ofproto.OFPFC_DELETE,
+                out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY,
+                priority=1, match=match)
+            datapath.send_msg(mod)
     
     # table-miss flow
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         datapath = ev.msg.datapath
+
+        self.datapaths.append(datapath)
+        
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
@@ -253,12 +281,14 @@ class SimpleSwitch13(app_manager.RyuApp):
 
             match = parser.OFPMatch(in_port=in_port, eth_type=ETH_TYPE_IP, ipv4_dst=self.VIRTUAL_IP)
 
-
+            # create an action to change the ip address and output the packet
             actions = [parser.OFPActionSetField(ipv4_dst=server_dst_ip),
                        parser.OFPActionOutput(server_out_port)]
 
+
             self.logger.warning('adding-flow from handle tcp')
             self.add_flow(datapath, 15, match, actions)
+            
             self.logger.info("<==== Added TCP Flow- Route to Server: " + str(server_dst_ip) +
                              " from Client :" + str(ip_header.src) + " on Switch Port:" +
                              str(server_out_port) + "====>")
@@ -279,3 +309,62 @@ class SimpleSwitch13(app_manager.RyuApp):
                              str(in_port) + "====>")
             packet_handled = True
         return packet_handled
+
+
+
+
+    
+
+        
+
+
+
+class LoadBalncerRest(ControllerBase):
+    _CONTEXTS = {
+        'wsgi': WSGIApplication
+    }
+
+    def __init__(self, req, link, data, **config):
+        super(LoadBalncerRest, self).__init__(req, link, data, **config)
+        self.load_balancer_app : LoadBalncer = data[load_balancer_instance_name]
+
+    @route('loadbalancer','/v1/loadbalancer/servers', methods=["GET"])
+    def _send_server(self, req, **kwargs):
+        body = json.dumps([s for s in self.load_balancer_app.servers],cls=ServerEncoder)
+        return create_response(body)
+
+    @route('loadbalancer' , '/v1/loadbalancer/servers'
+        ,methods=['POST'], requirements={
+            "mac" : HADDR_PATTERN,
+        }  )
+    @post_method(
+        keywords={
+            "ip": str,
+            "mac": str,
+            "port": int
+        },
+        validators={
+            "ip" : validate_ip,
+            "mac": validate_mac,
+            "port" : validate_int
+        }
+    )
+    def _add_server(self, **kwargs):
+        ip = kwargs['ip']
+        mac = kwargs['mac']
+        port = kwargs['port']
+
+        server = add_server_to_db(ip , mac , port)
+        
+
+        self.load_balancer_app.servers.append(server)
+
+        response = {
+            "msg" : "server successfully added",
+            "data" : {
+                "server" : server
+            }
+        }
+
+        body = json.dumps(response , cls=ServerEncoder)
+        return create_response(body=body)

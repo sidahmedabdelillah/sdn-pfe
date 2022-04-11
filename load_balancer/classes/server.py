@@ -1,3 +1,5 @@
+from json import JSONEncoder
+
 class Server:
     def __init__(self , ip , mac , port) -> None:
         self.ip   = ip
@@ -14,3 +16,7 @@ class Server:
     
     def __repr__(self) -> str:
         return self.__str__()
+    
+class ServerEncoder(JSONEncoder):
+        def default(self, o):
+            return o.__dict__
