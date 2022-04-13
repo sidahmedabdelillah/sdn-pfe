@@ -1,4 +1,5 @@
 import json
+from select import select
 from socket import MsgFlag
 from xmlrpc.client import Server
 from ryu.app.wsgi import WSGIApplication
@@ -16,6 +17,7 @@ from ryu.lib.packet import ethernet
 from ryu.app.wsgi import ControllerBase
 
 
+
 from typing import List
 
 # import validators
@@ -24,8 +26,9 @@ from ryu.lib.mac import HADDR_PATTERN
 from ryu.app.wsgi import route, Response
 
 
-from db import get_server_with_mac, get_servers_from_db, add_server_to_db
 from classes.server import ServerEncoder
+from db.server import get_servers_from_db, add_server_to_db, delete_server_from_db_with_mac
+
 
 from random import choice
 from utls.validators import validate_ip, validate_mac, validate_int
@@ -261,7 +264,7 @@ class LoadBalncer(app_manager.RyuApp):
         if ip_header.dst == self.VIRTUAL_IP:
 
             # find the packet with the chosen mac
-            chosen_server = get_server_with_mac(dst_mac)
+            chosen_server = self.get_server_with_mac(dst_mac)
 
             if(not chosen_server):
                 self.logger.error('Requested server Not found')
@@ -309,6 +312,10 @@ class LoadBalncer(app_manager.RyuApp):
                              str(in_port) + "====>")
             packet_handled = True
         return packet_handled
+    
+    def get_server_with_mac(self ,mac):
+        for server in self.servers:
+            if server.mac == mac : return server
 
 
 
@@ -368,3 +375,16 @@ class LoadBalncerRest(ControllerBase):
 
         body = json.dumps(response , cls=ServerEncoder)
         return create_response(body=body)
+
+    @route('loadbalancer' , '/v1/loadbalancer/servers/{mac}' , methods=["DELETE"])
+    def _delete_server(self , req , **kwargs):
+        mac = kwargs['mac']
+
+        servers = delete_server_from_db_with_mac(mac)
+        self.load_balancer_app.servers = servers
+
+        body = json.dumps({
+            "msg" : "server deleted succesffuly"
+        })
+        return create_response(body=body)
+        

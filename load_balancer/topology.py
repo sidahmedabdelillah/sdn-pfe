@@ -54,7 +54,7 @@ class ThreeSWloop(Topo):
 
 
 def run():
-    c = RemoteController('c', '0.0.0.0', 6633)
+    c = RemoteController('c', '127.0.0.1', 6633)
     net = Mininet(topo=ThreeSWloop(),  controller=None)
     net.addController(c)
     net.start()
