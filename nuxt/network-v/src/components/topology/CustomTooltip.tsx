@@ -2,7 +2,7 @@ import { BasicTooltip } from '@nivo/tooltip'
 import { InputNode, NodeTooltipProps } from '@nivo/network/dist/types/types'
 import { Card } from 'primereact/card'
 
-const CustomTooltip =  <Node extends MyNode>({ node }: NodeTooltipProps<Node>) =>
+const CustomTooltip=  <Node extends MyNode>({ node }: NodeTooltipProps<Node>) =>
  {  
      return( 
          <>
