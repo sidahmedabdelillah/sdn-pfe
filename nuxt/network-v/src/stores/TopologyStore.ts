@@ -4,15 +4,18 @@ import { HostInterface, SwitchInterface } from "../types/Topology";
 
 interface TopologyState {
   switches: SwitchInterface[];
-  setSwitches: (switchesToSet: SwitchInterface[]) => void;
   hosts: HostInterface[];
-  setHosts: (hostsToSet : HostInterface[])=> void
+  isTopologyError: boolean,
+  setSwitches: (switchesToSet: SwitchInterface[]) => void;
+  setHosts: (hostsToSet : HostInterface[])=> void,
+  setIsTopologyError : (s : boolean ) => void ,
 }
 
 const useTopologyStore = create<TopologyState>((set) => ({
   // initial state
   switches: [],
   hosts:[],
+  isTopologyError: false,
   // methods for manipulating state
   setSwitches: (switchesToSet: SwitchInterface[]) => {
     set((state) => ({
@@ -25,6 +28,12 @@ const useTopologyStore = create<TopologyState>((set) => ({
         ...state,
         hosts: hostsToSet
       }))
+  },
+  setIsTopologyError: (s:boolean) => {
+    set((state) =>( {
+      ...state,
+      isTopologyError:s
+    }))
   }
 }));
 

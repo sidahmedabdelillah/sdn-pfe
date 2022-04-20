@@ -17,7 +17,7 @@ const Settings : React.FC = () => {
 
         const handleSave = () => {
             setBaseUrl(`http://${value}`)
-            toastRef.current?.show({severity:'success', summary: 'Settings Saved', detail:'Message Content', life: 1500})
+            toastRef.current?.show({severity:'success', summary: 'Settings Saved',  life: 1500})
         }
 
         return(

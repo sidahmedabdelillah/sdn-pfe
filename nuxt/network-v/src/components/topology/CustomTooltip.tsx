@@ -7,7 +7,7 @@ const CustomTooltip=  <Node extends MyNode>({ node }: NodeTooltipProps<Node>) =>
      return( 
          <>
         { node.data.type == 'switch' &&
-            <Card className="tooltip-card" title={`switch-id: ${node.data.id}`}>
+            <Card className="tooltip-card " title={`switch-id: ${node.data.id}`}>
                 
             </Card>
         }
@@ -44,4 +44,4 @@ type ExtraPropos = {
     macAddress?: string,
 }
 
-type MyNode = InputNode & ExtraPropos ;
+export type MyNode = InputNode & ExtraPropos ;

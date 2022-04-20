@@ -7,13 +7,15 @@ import CustomTooltip from './CustomTooltip'
 import useTopologyStore  from "../../stores/TopologyStore";
 import useTopologyApi from "../../hooks/useTopologyApi";
 import useTopology from "../../hooks/useTopology";
+import { Chip } from "primereact/chip";
 
 
 const Topology : React.FC = () => {
 
     const data = useTopology()
-    const { setSwitches, setHosts } = useTopologyStore()
+    const { setSwitches, setHosts , isTopologyError } = useTopologyStore()
     const  { switchData , hostData}  = useTopologyApi()
+
 
 
 
@@ -32,6 +34,8 @@ const Topology : React.FC = () => {
     }
 
     return (
+      <>
+      
         <ResponsiveNetwork
         data={data}
         margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
@@ -56,6 +60,11 @@ const Topology : React.FC = () => {
         linkBlendMode='multiply'
         motionConfig='wobbly'
       />
+      {isTopologyError && 
+        <Chip className="!absolute top-14 left-2 !bg-red-500" icon="pi pi-exclamation-triangle" label="Network Error"
+        />}
+      </>
+      
     )
 }
 
