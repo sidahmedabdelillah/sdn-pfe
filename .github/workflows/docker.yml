@@ -21,7 +21,7 @@ jobs:
           echo "number of occurence of '$COMMIT_FILTER' in '$last_commit_log': $filter_count"
 
           if [[ "$filter_count" eq 0 ]]; then
-            echo "all good, continue"
+            echo "all good, continue" 
           else
             echo "the last commit log \"$last_commit_log\" contains \"$COMMIT_FILTER\", stopping"
             exit 78
