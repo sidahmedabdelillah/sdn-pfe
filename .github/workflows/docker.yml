@@ -8,10 +8,10 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
-    steps:
-      - name: change folder
+    defaults:
+      run:
         working-directory: ./nuxt/network-v
-        run: ls
+    steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
