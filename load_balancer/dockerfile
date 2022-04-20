@@ -3,19 +3,9 @@ from ubuntu
 
 RUN  apt-get update 
 RUN    apt-get install -y --no-install-recommends python-setuptools    python3-eventlet  python3-lxml  wget  unzip
-RUN apt-get install -y python3 python3-pip
-RUN      apt-get clean 
-RUN     echo "Download https://github.com/osrg/ryu/archive/master.zip and install" 
-RUN     wget -O /opt/ryu.zip "http://github.com/osrg/ryu/archive/master.zip" --no-check-certificate 
-RUN       unzip -q /opt/ryu.zip -d /opt &&     mv /opt/ryu-master /opt/ryu &&     rm /opt/ryu.zip 
-RUN      cd /opt/ryu 
+RUN apt-get install -y python pip
 
-
-WORKDIR /opt/ryu 
-RUN     pip3 install -r tools/pip-requires 
-RUN  python3 ./setup.py install
-
-RUN   pip3 install -r /opt/ryu/tools/pip-requires --upgrade
+RUN   pip install ryu
 
 EXPOSE 6633/tcp
 
@@ -29,7 +19,7 @@ COPY ./ .
 
 WORKDIR /app
 
- CMD ["/usr/local/bin/ryu-manager" "./load_balance.py ../rest_topology.py --observe-links"]
+ CMD ["ryu run " "./load_balance.py ../rest_topology.py --observe-links"]
 
 
 

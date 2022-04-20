@@ -1,6 +1,5 @@
 import sys
 
-from colorama import Cursor
 
 sys.path.append('..')
 
