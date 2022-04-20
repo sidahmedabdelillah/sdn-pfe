@@ -18,9 +18,17 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: docker build 
+      - name: change folder
         working-directory: nuxt/network-v
+        run: ls
+      - name: docker build
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: user/app:latest
+          tags: abdoubentegar/sdn-react
+      # - name: docker-build
+      #   uses: docker/build-push-action@v2
+      #   working-directory: nuxt/network-v
+      #   with:
+      #     push: true
+      #     tags: user/app:latest
