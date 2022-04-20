@@ -46,25 +46,31 @@ class FatTreeTopo(Topo):
         s2 = self.addSwitch('s2', cls=OVSKernelSwitch)
 
         #Add links
-        self.addLink(h1, s1)
-        self.addLink(h2, s1)
-        self.addLink(h3, s2)
-        self.addLink(h4, s2)
-        self.addLink(h5, s3)
-        self.addLink(h6, s3)
-        self.addLink(h7, s4)
-        self.addLink(h8, s4)
+        # self.addLink(h1, s1)
+        # self.addLink(h2, s1)
+        # self.addLink(h3, s2)
+        # self.addLink(h4, s2)
+        # self.addLink(h5, s3)
+        # self.addLink(h6, s3)
+        # self.addLink(h7, s4)
+        # self.addLink(h8, s4)
         self.addLink(s1, s21)
-        self.addLink(s21, s2)
         self.addLink(s1, s10)
+        
         self.addLink(s2, s10)
+        self.addLink(s21, s2)
+        
         self.addLink(s3, s11)
+        self.addLink(s3, s22)
+        
         self.addLink(s4, s22)
         self.addLink(s11, s4)
-        self.addLink(s3, s22)
-        self.addLink(s21, s17)
-        self.addLink(s11, s17)
+        
         self.addLink(s10, s18)
+        
+        self.addLink(s11, s17)
+
+        self.addLink(s21, s17)
         self.addLink(s22, s18)
 
 

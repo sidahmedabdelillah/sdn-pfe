@@ -261,6 +261,7 @@ class LoadBalncer(app_manager.RyuApp):
         packet_handled = False
 
         # if the packet is for the VIRTUAL_IP
+
         if ip_header.dst == self.VIRTUAL_IP:
 
             # find the packet with the chosen mac
