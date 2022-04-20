@@ -2,19 +2,19 @@ from ubuntu
 
 
 RUN  apt-get update 
-RUN    apt-get install -y --no-install-recommends python-setuptools  python-pip  python-eventlet  python-lxml  wget  unzip
+RUN    apt-get install -y --no-install-recommends python-setuptools    python-eventlet  python-lxml  wget  unzip
+RUN apt-get install -y python3 python3-pip
 RUN      apt-get clean 
-RUN     rm -rf /var/lib/apt/lists/* 
 RUN     echo "Download https://github.com/osrg/ryu/archive/master.zip and install" 
 RUN     wget -O /opt/ryu.zip "http://github.com/osrg/ryu/archive/master.zip" --no-check-certificate 
 RUN      unzip -q /opt/ryu.zip -d /opt 
 RUN     mv /opt/ryu-master /opt/ryu &&     
 RUN  /opt/ryu.zip 
 RUN      cd /opt/ryu 
-RUN     pip install -r tools/pip-requires &&     python ./setup.py install
+RUN     pip install -r tools/pip-requires &&     python3 ./setup.py install
 
 
-RUN   pip install -r /opt/ryu/tools/pip-requires --upgrade
+RUN   pip3 install -r /opt/ryu/tools/pip-requires --upgrade
 
 EXPOSE 6633/tcp
 
