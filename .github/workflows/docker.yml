@@ -26,4 +26,4 @@ jobs:
           push: true
           tags: abdoubentegar/sdn-react
           file: nuxt/network-v/dockerfile
-          context: /nuxt/network-v
+          context: ./nuxt/network-v
