@@ -29,7 +29,6 @@ COPY ./ .
 
 WORKDIR /app
 
- CMD ["/bin/ryu-manager" "./load_balance.py ../rest_topology.py --observe-links"]
 
 
 
