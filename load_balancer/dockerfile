@@ -20,8 +20,7 @@ COPY ./ .
 WORKDIR /app
 RUN ls /usr/local/bin
 
-RUN /usr/local/bin/ryu run ./load_balance.py ../rest_topology.py --observe-links
-CMD ["/usr/local/bin/ryu  " ,"run ./load_balance.py ../rest_topology.py --observe-links"]
+CMD /usr/local/bin/ryu   run ./load_balance.py ../rest_topology.py --observe-links
 
 
 
