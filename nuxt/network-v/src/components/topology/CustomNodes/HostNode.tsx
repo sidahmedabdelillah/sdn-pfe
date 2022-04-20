@@ -68,7 +68,7 @@ const CustomNode = <Node extends InputNode>({
                 />
                 
                 {
-                    isProblem && <TriangleIcon x={animatedProps.x.get() + size / 3 } y={animatedProps.x.get() - size / 1.5 } />
+                    isProblem && <TriangleIcon x={Number(animatedProps.x.get()) + size / 3 } y={animatedProps.y.get() - size  } />
                 }
             </>
 
