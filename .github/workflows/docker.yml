@@ -24,10 +24,4 @@ jobs:
           push: true
           tags: abdoubentegar/sdn-react
           file: nuxt/network-v/dockerfile
-          context: ./nuxt/network-v
-      # - name: docker-build
-      #   uses: docker/build-push-action@v2
-      #   working-directory: nuxt/network-v
-      #   with:
-      #     push: true
-      #     tags: user/app:latest
+          context: /nuxt/network-v
