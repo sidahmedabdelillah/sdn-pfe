@@ -1,5 +1,7 @@
 FROM node:latest
 
+RUN apt-get update    && apt-get install -y nginx
+
 WORKDIR /app
 
 COPY package.json ./
@@ -8,4 +10,16 @@ RUN yarn install
 
 COPY . .
 
-CMD ["yarn", "dev"]
+RUN yarn build
+
+RUN cp -r dist/* /var/www/html 
+
+EXPOSE 80
+
+
+CMD ["nginx","-g","daemon off;"]
+
+
+
+
+
