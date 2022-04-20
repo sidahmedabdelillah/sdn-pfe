@@ -10,6 +10,8 @@ const TopBar = () => {
 
     const items = [
         {label: 'Topology', icon: 'pi pi-fw pi-sitemap'},
+        {label: 'Settings', icon: 'pi pi-fw pi-cog'},
+
 
     ];
 
@@ -17,6 +19,10 @@ const TopBar = () => {
         switch(e.index){
             case 0 : 
                 setActiveTab(SidBarTabsEnum.TopologyOverView);
+                setActiveIndex(e.index)
+                break ;
+            case 1 : 
+                setActiveTab(SidBarTabsEnum.SettingsView);
                 setActiveIndex(e.index)
                 break ;
 

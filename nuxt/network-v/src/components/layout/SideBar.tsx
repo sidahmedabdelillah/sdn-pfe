@@ -4,6 +4,7 @@ import { Card } from 'primereact/card'
 import TopologyOverView from './SideBarMenues/TopologyOverView'
 import useSideBarStore, { SidBarTabsEnum } from '../../stores/sideBarStore'
 import HostOverView from './SideBarMenues/HostOverView'
+import Settings from './SideBarMenues/Settings'
 const SideBar: React.FC = ({ children }) => {
   const { activeTab } = useSideBarStore()
 
@@ -16,6 +17,8 @@ const SideBar: React.FC = ({ children }) => {
                 return <TopologyOverView />
             case SidBarTabsEnum.HostOverView:
                 return <HostOverView />
+            case SidBarTabsEnum.SettingsView:
+                return <Settings />
           }
         })()}
       </ScrollPanel>

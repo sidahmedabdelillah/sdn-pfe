@@ -1,3 +1,4 @@
+import { getValueFormatter } from '@nivo/core'
 import axios, { AxiosResponse } from 'axios'
 import { HostInterface, LinkInterface, SwitchInterface } from '../types/Topology'
 

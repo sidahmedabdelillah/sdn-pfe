@@ -4,6 +4,7 @@ import create  from "zustand";
 export enum SidBarTabsEnum {
   TopologyOverView = 'TopologyOverView',
   HostOverView = 'HostOverView',
+  SettingsView = 'SettingsView' 
 
 }
 
