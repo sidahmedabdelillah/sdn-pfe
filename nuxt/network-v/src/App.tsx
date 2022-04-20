@@ -4,6 +4,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import routes from './routes'
 
+import { PersistGate } from 'zustand-persist'
 
 // componenets
 import TopBar from './components/layout/TopBar'
@@ -19,6 +20,7 @@ import './assets/styles/scss/style.scss'
 
 const App: React.FC = () => {
   return (
+<PersistGate>
     <div id='main'>
       <TopBar />
       <div className='flex h-[100%]'>
@@ -40,6 +42,8 @@ const App: React.FC = () => {
         </div>
       </div>
     </div>
+    </PersistGate>
+    
   )
 }
 export default App
