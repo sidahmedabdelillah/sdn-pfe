@@ -9,7 +9,9 @@ RUN     echo "Download https://github.com/osrg/ryu/archive/master.zip and instal
 RUN     wget -O /opt/ryu.zip "http://github.com/osrg/ryu/archive/master.zip" --no-check-certificate 
 RUN       unzip -q /opt/ryu.zip -d /opt &&     mv /opt/ryu-master /opt/ryu &&     rm /opt/ryu.zip 
 RUN      cd /opt/ryu 
-RUN      ls -lrt
+
+
+WORKDIR /opt/ryu 
 RUN     pip3 install -r tools/pip-requires 
 RUN  python3 ./setup.py install
 
@@ -17,13 +19,15 @@ RUN   pip3 install -r /opt/ryu/tools/pip-requires --upgrade
 
 EXPOSE 6633/tcp
 
+
 RUN mkdir /app
 
-WORKDIR /opt/ryu 
 
 WORKDIR /app
 
 COPY ./ .
+
+WORKDIR /app
 
  CMD ["./bin/ryu-manager" "./load_balance.py ../rest_topology.py --observe-links"]
 
