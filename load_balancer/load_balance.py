@@ -16,6 +16,12 @@ from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
 from ryu.app.wsgi import ControllerBase
 
+import sys
+print("Python version")
+print (sys.version)
+print("Version info.")
+print (sys.version_info)
+
 
 
 from typing import List
