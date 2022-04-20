@@ -8,5 +8,4 @@ WORKDIR /app
 
 COPY ./ .
 
-CMD ["ryu ", "run ./load_balance.py ../rest_topology.py --observe-links "]
 
