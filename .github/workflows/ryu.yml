@@ -28,9 +28,7 @@ jobs:
             exit 78
           else
             echo "all good, continue"
-            
-          
-          
+          fi
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
