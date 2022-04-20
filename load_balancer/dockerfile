@@ -1,4 +1,4 @@
-from alpine 
+from ubuntu 
 
 
 RUN  apt-get update 
