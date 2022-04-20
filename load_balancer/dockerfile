@@ -1,0 +1,12 @@
+from python 
+
+RUN pip3 install ryu
+
+RUN mkdir /app
+
+WORKDIR /app
+
+COPY ./ .
+
+CMD ['ryu run ./load_balance.py ../rest_topology.py --observe-links ']
+
