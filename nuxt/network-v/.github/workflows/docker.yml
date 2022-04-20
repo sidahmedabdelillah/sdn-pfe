@@ -28,7 +28,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: abdoubentegar/sdn-react
+          tags: abdoubentegar/sdn-react,abdoubentegar/sdn-react:0.1
       # - name: docker-build
       #   uses: docker/build-push-action@v2
       #   working-directory: nuxt/network-v
