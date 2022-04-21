@@ -83,7 +83,7 @@ export default function useTopology() {
       size: 35,
     }))
   
-    const hostLinks : linkType[] = hostData.map(i => ({
+    const hostLinks : linkType[] = hostData.filter(host => switches.findIndex(s => s.id === host.port.dpid)).map(i => ({
       source: i.mac,
       target: i.port.dpid,
       distance: 150,
