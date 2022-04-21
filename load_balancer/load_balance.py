@@ -342,10 +342,19 @@ class LoadBalncerRest(ControllerBase):
         super(LoadBalncerRest, self).__init__(req, link, data, **config)
         self.load_balancer_app : LoadBalncer = data[load_balancer_instance_name]
 
+    @route('loadbalancer' , '/v1/loadbalancer/servers' , methods=["OPTIONS"])
+    def _options_response(self,req,**kwargs):
+        print('here')
+        r = create_response({})
+        print(r)
+        return r
+
     @route('loadbalancer','/v1/loadbalancer/servers', methods=["GET"])
     def _send_server(self, req, **kwargs):
         body = json.dumps([s for s in self.load_balancer_app.servers],cls=ServerEncoder)
         return create_response(body)
+
+
 
     @route('loadbalancer' , '/v1/loadbalancer/servers'
         ,methods=['POST'], requirements={
@@ -382,6 +391,13 @@ class LoadBalncerRest(ControllerBase):
 
         body = json.dumps(response , cls=ServerEncoder)
         return create_response(body=body)
+
+
+    @route('loadbalancer' , '/v1/loadbalancer/servers/{mac}' , methods=["OPTIONS"])
+    def _delete_options_response(self,req,**kwargs):
+        r = create_response({})
+        print(r)
+        return r
 
     @route('loadbalancer' , '/v1/loadbalancer/servers/{mac}' , methods=["DELETE"])
     def _delete_server(self , req , **kwargs):

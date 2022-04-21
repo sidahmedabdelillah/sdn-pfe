@@ -10,6 +10,10 @@ def create_response(body, status=200, content_type='application/json'):
                                 body=body, status=status)
     
     r._headerlist.append(('Access-Control-Allow-Origin', '*'))
+    r._headerlist.append(('Access-Control-Allow-Methods', '*'))
+    r._headerlist.append(('Access-Control-Max-Age', 86400))
+    r._headerlist.append(('Access-Control-Allow-Headers' , '*'))
+
     return r
 
 
