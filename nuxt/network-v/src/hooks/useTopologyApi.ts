@@ -4,7 +4,7 @@ import {
   ServerInterface,
   SwitchInterface,
 } from '../types/Topology'
-import { useAxiosGet, useAxiosPost } from './useAxios'
+import { useAxiosDelete, useAxiosGet, useAxiosPost } from './useAxios'
 
 export default function useTopologyApi() {
   const { data: switchData } = useAxiosGet<SwitchInterface[]>(
@@ -31,11 +31,17 @@ export const useServersApi = () => {
 }
 
 export const usePostServerApi = (body: any) => {
-  const { postData: postServerApi } = useAxiosPost(
+  const { postData: postServerApi, error: postServerError } = useAxiosPost(
     'v1/loadbalancer/servers',
     body
   )
 
-  return { postServerApi 
+  return { postServerApi ,postServerError
   }
+}
+
+export const useDeleteServerApi = (mac : string) => {
+    const {deleteData : deleteServerApi ,error: deleteServerError } = useAxiosDelete(`v1/loadbalancer/servers/${mac}`);
+    return {deleteServerApi,deleteServerError
+    }
 }
