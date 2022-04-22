@@ -1,9 +1,8 @@
 import { memo } from 'react'
-import { animated, to } from '@react-spring/web'
+import { animated } from '@react-spring/web'
 import { InputNode, NodeProps } from '@nivo/network/dist/types/types'
-import useSideBarStore, { SidBarTabsEnum } from '../../../stores/sideBarStore'
+import switchSvg from '@/assets/svg/blue/switch.svg'
 
-const switchImageUrl = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwZ1FIaoo_uqikq8pSb2b6_20701AcmoCROA&usqp=CAU'
 
 const CustomNode = <Node extends InputNode>({
     node,
@@ -13,12 +12,7 @@ const CustomNode = <Node extends InputNode>({
     onMouseMove,
     onMouseLeave,
 }: NodeProps<Node>) => {
-        const imgUrl = switchImageUrl
-        const size = node.data.size || animatedProps.size.get()
-
-
-
-        
+        const size = node.data.size || animatedProps.size.get()        
         return (
             <animated.image
                 data-testid={`node.${node.id}`}
@@ -31,7 +25,7 @@ const CustomNode = <Node extends InputNode>({
                   }
                 onMouseMove={onMouseMove ? event => onMouseMove(node, event) : undefined}
                 onMouseLeave={onMouseLeave ? event => onMouseLeave(node, event) : undefined}
-                href={imgUrl}
+                href={switchSvg}
             />
             
         )
