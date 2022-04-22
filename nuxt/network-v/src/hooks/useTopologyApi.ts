@@ -26,7 +26,7 @@ export default function useTopologyApi() {
 export const useServersApi = () => {
   const { data: serversData, reload: reloadServers } = useAxiosGet<
     ServerInterface[]
-  >('v1/loadbalancer/servers', 1000)
+  >('v1/loadbalancer/servers', 10000)
   return { serversData, reloadServers }
 }
 
