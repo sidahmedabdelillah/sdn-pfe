@@ -7,7 +7,7 @@ RUN    apt-get install -y --no-install-recommends python-setuptools    python3-e
 
 RUN apt-get update
 
-RUN apt-get install -y python pip
+RUN apt-get install -y python2 pip
 
 RUN   pip install ryu
 
