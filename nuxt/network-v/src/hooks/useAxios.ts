@@ -74,3 +74,27 @@ export function useAxiosPost<T>(url: string, body: any) {
 
   return { data, error, postData ,loading}
 }
+
+export function useAxiosDelete<T>(url: string) {
+    const [data, setData] = useState<T>()
+    const [error, setError] = useState(null)
+    const [loading, setLoading] = useState(false)
+    const { BaseUrl } = useAxiosStore()
+  
+    const deleteData = async () => {
+      try {
+        setLoading(true)
+        const response: AxiosResponse<T> = await axios.delete(
+          `${BaseUrl}/${url}`
+        )
+        setData(response.data)
+      } catch (err: any) {
+        setError(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+  
+    return { data, error, deleteData ,loading}
+  }
+  
