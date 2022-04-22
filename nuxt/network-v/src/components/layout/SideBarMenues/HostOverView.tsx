@@ -3,12 +3,22 @@ import { Chip } from 'primereact/chip'
 import { Tooltip } from 'primereact/tooltip'
 
 import React, { useEffect, useState } from 'react'
+import { usePostServerApi } from '../../../hooks/useTopologyApi'
 import useServersStore from '../../../stores/serverStore'
 import useSideBarStore from '../../../stores/sideBarStore'
 import useTopologyStore from '../../../stores/TopologyStore'
 import { HostInterface } from '../../../types/Topology'
 
 const HostOverView: React.FC = () => {
+  const [serverToPost, setServerToPost] = useState({
+    ip: '',
+    mac: '',
+    port: 0,
+  } as {
+    ip: string
+    mac: string
+    port: number
+  })
   const { selectedHost } = useSideBarStore()
   const { hosts } = useTopologyStore()
   const { getIsServer, servers } = useServersStore()
@@ -16,15 +26,32 @@ const HostOverView: React.FC = () => {
   const [host, setHost] = useState<HostInterface>()
   const [isServer, setIsServer] = useState(false)
 
+  const { postServerApi,postServerError } = usePostServerApi(serverToPost);
+
+  const handlePostClick = () => {
+    if(host){
+        setServerToPost({
+            ip: host.ipv4[0],
+            mac: host.mac,
+            port: Number(host.port.port_no)
+        })
+        console.log(serverToPost)
+        postServerApi();
+        if(postServerError){
+            console.log('error')
+        }
+    }
+  }
+
   useEffect(() => {
     const foundHost = hosts.find(host => host.mac === selectedHost)
 
-    setHost(foundHost)
-  }, [selectedHost, hosts])
+    setHost(foundHost);
+  }, [selectedHost, hosts]);
 
   useEffect(() => {
     setIsServer(getIsServer(host?.mac))
-  }, [selectedHost, servers, host])
+  }, [selectedHost, servers, host]);
 
   if (!host) {
     return <h1>Please Select a host</h1>
@@ -79,6 +106,13 @@ const HostOverView: React.FC = () => {
           : Number(host.port.dpid)}
       </p>
       <p>with port {Number(host.port.port_no)}</p>
+
+      {!isServer && (
+        <Button onClick={handlePostClick} className='mt-4'> Add host to server cluster </Button>
+      )}
+      {isServer && (
+        <Button className='mt-4'> Remove server from server cluster </Button>
+      )}
     </>
   )
 }
