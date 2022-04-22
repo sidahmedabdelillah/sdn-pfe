@@ -2,7 +2,11 @@ from ubuntu
 
 
 RUN  apt-get update 
+
 RUN    apt-get install -y --no-install-recommends python-setuptools    python3-eventlet  python3-lxml  wget  unzip
+
+RUN apt-get update
+
 RUN apt-get install -y python pip
 
 RUN   pip install ryu
