@@ -15,6 +15,7 @@ from ryu.lib.packet.ether_types import ETH_TYPE_IP
 from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
 from ryu.app.wsgi import ControllerBase
+from ryu.controller.controller import Datapath
 
 import sys
 print("Python version")
@@ -76,28 +77,6 @@ class LoadBalncer(app_manager.RyuApp):
                 out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY,
                 priority=1, match=match)
             datapath.send_msg(mod)
-    
-    # table-miss flow
-    @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
-    def switch_features_handler(self, ev):
-        datapath = ev.msg.datapath
-
-        self.datapaths.append(datapath)
-        
-        ofproto = datapath.ofproto
-        parser = datapath.ofproto_parser
-
-        # install table-miss flow entry
-        #
-        # We specify NO BUFFER to max_len of the output action due to
-        # OVS bug. At this moment, if we specify a lesser number, e.g.,
-        # 128, OVS will send Packet-In with invalid buffer_id and
-        # truncated packet data. In that case, we cannot output packets
-        # correctly.  The bug has been fixed in OVS v2.1.0.
-        match = parser.OFPMatch()
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-                                          ofproto.OFPCML_NO_BUFFER)]
-        self.add_flow(datapath, 0, match, actions)
 
     # add flow function 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
@@ -117,6 +96,31 @@ class LoadBalncer(app_manager.RyuApp):
             mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
                                     match=match, instructions=inst)
         datapath.send_msg(mod)
+
+    
+    # table-miss flow
+    @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
+    def switch_features_handler(self, ev : ofp_event.EventOFPSwitchFeatures):
+        datapath : Datapath= ev.msg.datapath
+
+
+        self.datapaths.append(datapath)
+        
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+
+        # install table-miss flow entry
+        #
+        # We specify NO BUFFER to max_len of the output action due to
+        # OVS bug. At this moment, if we specify a lesser number, e.g.,
+        # 128, OVS will send Packet-In with invalid buffer_id and
+        # truncated packet data. In that case, we cannot output packets
+        # correctly.  The bug has been fixed in OVS v2.1.0.
+        match = parser.OFPMatch()
+        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+                                          ofproto.OFPCML_NO_BUFFER)]
+        self.add_flow(datapath, 0, match, actions)
+
 
     # handle packetIn event (no flow match)
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
@@ -160,13 +164,14 @@ class LoadBalncer(app_manager.RyuApp):
         self.mac_to_port.setdefault(dpid, {})
 
         # log the packet "packet in switch_id source_mac destination_mac in_port"
-        self.logger.info("packet in %s %s %s %s", dpid, src_mac, dst_mac, in_port)
+        # self.logger.info("packet in %s %s %s %s", dpid, src_mac, dst_mac, in_port)
 
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src_mac] = in_port
         
         if dst_mac in self.mac_to_port[dpid]:
             # if the destination mac is previously learned get it from the dict
+            self.logger.info('port found')
             out_port = self.mac_to_port[dpid][dst_mac]
         else:
             # else flood the packet
@@ -381,6 +386,9 @@ class LoadBalncerRest(ControllerBase):
         
 
         self.load_balancer_app.servers.append(server)
+        
+        for datapath in self.load_balancer_app.datapaths:
+            self.load_balancer_app.delete_flow(datapath)
 
         response = {
             "msg" : "server successfully added",
@@ -406,8 +414,12 @@ class LoadBalncerRest(ControllerBase):
         servers = delete_server_from_db_with_mac(mac)
         self.load_balancer_app.servers = servers
 
+        for datapath in self.load_balancer_app.datapaths:
+            self.load_balancer_app.delete_flow(datapath)
+
         body = json.dumps({
             "msg" : "server deleted succesffuly"
         })
         return create_response(body=body)
         
+    
