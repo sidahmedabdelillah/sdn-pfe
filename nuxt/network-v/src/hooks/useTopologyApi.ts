@@ -1,4 +1,4 @@
-import { HostInterface, LinkInterface, SwitchInterface } from '../types/Topology';
+import { HostInterface, LinkInterface, ServerInterface, SwitchInterface } from '../types/Topology';
 import { useAxiosGet } from './useAxios';
 
 export default function useTopologyApi() {
@@ -10,7 +10,7 @@ export default function useTopologyApi() {
 }
 
 export const useServersApi = () => {
-    const { data: serversData , reload: reloadServers } = useAxiosGet<SwitchInterface[]>('v1/loadbalancer/servers' , 1000);
+    const { data: serversData , reload: reloadServers } = useAxiosGet<ServerInterface[]>('v1/loadbalancer/servers' , 1000);
 
     return { serversData , reloadServers }
 }
