@@ -5,9 +5,10 @@ import CustomLink from './CustomLink'
 import CustomNode from "./CustomNode";
 import CustomTooltip from './CustomTooltip'
 import useTopologyStore  from "../../stores/TopologyStore";
-import useTopologyApi from "../../hooks/useTopologyApi";
+import useTopologyApi, { useServersApi } from "../../hooks/useTopologyApi";
 import useTopology from "../../hooks/useTopology";
 import { Chip } from "primereact/chip";
+import useServersStore from "../../stores/serverStore";
 
 
 const Topology : React.FC = () => {
@@ -15,8 +16,8 @@ const Topology : React.FC = () => {
     const data = useTopology()
     const { setSwitches, setHosts , isTopologyError } = useTopologyStore()
     const  { switchData , hostData}  = useTopologyApi()
-
-
+    const { serversData } = useServersApi()
+    const { setServers } = useServersStore()
 
 
 
@@ -28,6 +29,12 @@ const Topology : React.FC = () => {
         setSwitches(switchData)
       }
     },[hostData, switchData,setHosts,setSwitches])
+
+    useEffect(() => {
+      if(serversData){
+        setServers(serversData);
+      }
+    },[serversData])
 
     if(!data){
       return <h1>Error</h1>
