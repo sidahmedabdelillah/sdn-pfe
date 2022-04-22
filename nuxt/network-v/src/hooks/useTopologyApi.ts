@@ -9,3 +9,8 @@ export default function useTopologyApi() {
     return { switchData , hostData , linksData}
 }
 
+export const useServersApi = () => {
+    const { data: serversData , reload: reloadServers } = useAxiosGet<SwitchInterface[]>('v1/loadbalancer/servers' , 1000);
+
+    return { serversData , reloadServers }
+}

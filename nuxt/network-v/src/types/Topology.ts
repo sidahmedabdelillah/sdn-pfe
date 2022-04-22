@@ -29,3 +29,10 @@ export interface HostInterface {
   ipv6: string[]
   port: PortInterface
 }
+
+
+export interface ServerInterface {
+  ip: string,
+  mac: string,
+  port: number
+}
