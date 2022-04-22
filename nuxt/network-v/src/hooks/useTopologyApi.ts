@@ -40,7 +40,7 @@ export const usePostServerApi = (body: any) => {
   }
 }
 
-export const useDeleteServerApi = (mac : string) => {
+export const useDeleteServerApi = (mac : string | undefined) => {
     const {deleteData : deleteServerApi ,error: deleteServerError } = useAxiosDelete(`v1/loadbalancer/servers/${mac}`);
     return {deleteServerApi,deleteServerError
     }
