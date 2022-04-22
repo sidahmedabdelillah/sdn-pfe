@@ -5,11 +5,11 @@ import { ServerInterface } from "../types/Topology";
 interface ServerStore {
   servers: ServerInterface[];
   setServers: (servers:ServerInterface[]) => void,
-  getIsServer: (mac:string) => boolean,
+  getIsServer: (mac:string | undefined) => boolean,
   getServer: (mac:string) => ServerInterface | undefined
 }
 
-const useSideBarStore = create<ServerStore>((set ,get) => ({
+const useServersStore = create<ServerStore>((set ,get) => ({
     servers:[],
     setServers: (servers) => (set((state) => ({
       ...state,
@@ -20,5 +20,5 @@ const useSideBarStore = create<ServerStore>((set ,get) => ({
 
 }));
 
-export default useSideBarStore
+export default useServersStore
 
