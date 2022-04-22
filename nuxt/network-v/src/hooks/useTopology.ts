@@ -43,7 +43,7 @@ export default function useTopology() {
       if (!isDstInDpids || !isSrcInDpids) {
         linksData.splice(i, 1)
         continue
-      }
+      } 
 
       let dup = linksData.findIndex(i => i.dst.name === ele.src.name)
       if (dup !== i) {
