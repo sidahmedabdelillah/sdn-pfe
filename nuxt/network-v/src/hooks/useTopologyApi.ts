@@ -6,27 +6,30 @@ import {
 } from '../types/Topology'
 import { useAxiosDelete, useAxiosGet, useAxiosPost } from './useAxios'
 
-export default function useTopologyApi() {
+export default function useTopologyApi(longPooling:boolean = false) {
+  const interval = longPooling ? 10000 : 0 ;
   const { data: switchData } = useAxiosGet<SwitchInterface[]>(
     'v1.0/topology/switches',
-    10000
+    interval
   )
   const { data: hostData } = useAxiosGet<HostInterface[]>(
     'v1.0/topology/hosts',
-    10000
+    interval
   )
   const { data: linksData } = useAxiosGet<LinkInterface[]>(
     'v1.0/topology/links',
-    10000
+    interval
   )
 
   return { switchData, hostData, linksData }
 }
 
-export const useServersApi = () => {
+export const useServersApi = (longPooling:boolean = false) => {
+  const interval = longPooling ? 10000 : 0 ;
+
   const { data: serversData, reload: reloadServers } = useAxiosGet<
     ServerInterface[]
-  >('v1/loadbalancer/servers', 10000)
+  >('v1/loadbalancer/servers', interval)
   return { serversData, reloadServers }
 }
 

@@ -3,11 +3,14 @@ import { Chip } from 'primereact/chip'
 import { Tooltip } from 'primereact/tooltip'
 
 import React, { useEffect, useState } from 'react'
-import { useDeleteServerApi, usePostServerApi } from '../../../hooks/useTopologyApi'
+import { getServer } from '../../../api/serversApi'
+import { useDeleteServerApi, usePostServerApi, useServersApi } from '../../../hooks/useTopologyApi'
+import useAxiosStore from '../../../stores/axiosStore'
 import useServersStore from '../../../stores/serverStore'
 import useSideBarStore from '../../../stores/sideBarStore'
 import useTopologyStore from '../../../stores/TopologyStore'
 import { HostInterface } from '../../../types/Topology'
+
 
 const HostOverView: React.FC = () => {
   const emptyServerToPost = {
@@ -22,28 +25,41 @@ const HostOverView: React.FC = () => {
   const [serverToPost, setServerToPost] = useState(emptyServerToPost)
   const { selectedHost } = useSideBarStore()
   const { hosts } = useTopologyStore()
-  const { getIsServer, servers } = useServersStore()
+  const { getIsServer, servers, setServers : setStoreServers } = useServersStore()
 
   const [host, setHost] = useState<HostInterface>()
   const [isServer, setIsServer] = useState(false)
 
+
   const { postServerApi, postServerError } = usePostServerApi(serverToPost)
   const { deleteServerApi, deleteServerError } = useDeleteServerApi(host?.mac)
 
-  const handlePostClick = () => {
+  const { BaseUrl } = useAxiosStore();
+
+
+  const handlePostClick = async () => {
     if (serverToPost !== emptyServerToPost) {
       postServerApi()
       if (postServerError) {
         console.log('error')
       }
+      setTimeout(async () => {
+        const servers = await getServer(BaseUrl);
+        setStoreServers(servers);
+      } , 100)
     }
   }
 
-  const handleDeleteClick = () => {
+  const handleDeleteClick = async() => {
     deleteServerApi()
     if(deleteServerError){
         console.log('error')
     }
+    setTimeout(async () => {
+      const servers = await getServer(BaseUrl);
+      setStoreServers(servers);
+    } , 100)
+    
   }
 
   useEffect(() => {

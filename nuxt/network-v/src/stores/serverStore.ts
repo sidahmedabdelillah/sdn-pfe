@@ -11,10 +11,12 @@ interface ServerStore {
 
 const useServersStore = create<ServerStore>((set ,get) => ({
     servers:[],
-    setServers: (servers) => (set((state) => ({
+    setServers: (servers) => (set((state) => {
+      console.log('setting server ' , servers);
+      return ({
       ...state,
       servers: servers
-    }))),
+    })})),
     getIsServer: (mac) => get().servers.findIndex(server => server.mac === mac) > -1,
     getServer: (mac) => get().servers.find(server => server.mac === mac)
 
