@@ -37,9 +37,6 @@ const CustomNode = <Node extends InputNode>({
         },[node]);
 
         useEffect(() => {
-            if(node.data.id === '00:00:00:00:00:01'){
-                console.log('the wanted host ' , node.data)
-            }
             if(node.data.type === 'server'){
                 setImageUrl(serverSvg);
             }
