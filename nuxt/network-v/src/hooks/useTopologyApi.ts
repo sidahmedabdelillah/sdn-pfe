@@ -6,8 +6,9 @@ import {
 } from '../types/Topology'
 import { useAxiosDelete, useAxiosGet, useAxiosPost } from './useAxios'
 
-export default function useTopologyApi(longPooling:boolean = false) {
+export default function useTopologyApi(longPooling:boolean = true) {
   const interval = longPooling ? 10000 : 0 ;
+
   const { data: switchData } = useAxiosGet<SwitchInterface[]>(
     'v1.0/topology/switches',
     interval
