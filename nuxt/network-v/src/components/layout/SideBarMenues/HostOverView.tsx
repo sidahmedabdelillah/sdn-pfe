@@ -1,10 +1,13 @@
-import { Button } from 'primereact/button'
-import { Chip } from 'primereact/chip'
-import { Tooltip } from 'primereact/tooltip'
+import React, { useEffect, useState } from 'react';
+import { Button } from 'primereact/button';
+import { Chip } from 'primereact/chip';
+import { Tooltip } from 'primereact/tooltip';
 
-import React, { useEffect, useState } from 'react'
+import { ConfirmDialog } from 'primereact/confirmdialog';
+import { confirmDialog } from 'primereact/confirmdialog';
+
 import { getServer } from '../../../api/serversApi'
-import { useDeleteServerApi, usePostServerApi, useServersApi } from '../../../hooks/useTopologyApi'
+import { useDeleteServerApi, usePostServerApi,} from '../../../hooks/useTopologyApi'
 import useAxiosStore from '../../../stores/axiosStore'
 import useServersStore from '../../../stores/serverStore'
 import useSideBarStore from '../../../stores/sideBarStore'
@@ -36,8 +39,17 @@ const HostOverView: React.FC = () => {
 
   const { BaseUrl } = useAxiosStore();
 
+  const handlePostClick = () => {
+    confirmDialog({
+      message: 'Are you Sure you want to add this node to the server cluster ?',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => postServer(),
+      reject: () => null
+  });
+  }
 
-  const handlePostClick = async () => {
+
+  const postServer = async () => {
     if (serverToPost !== emptyServerToPost) {
       postServerApi()
       if (postServerError) {
@@ -50,7 +62,16 @@ const HostOverView: React.FC = () => {
     }
   }
 
-  const handleDeleteClick = async() => {
+  const handleDeleteClick = () => {
+    confirmDialog({
+      message: 'Are you Sure you want to delete this node from the server cluster?',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => deleteServer(),
+      reject: () => null
+  });
+  }
+
+  const deleteServer = async() => {
     deleteServerApi()
     if(deleteServerError){
         console.log('error')
@@ -88,6 +109,7 @@ const HostOverView: React.FC = () => {
 
   return (
     <>
+      <ConfirmDialog/>
       <div className='mb-8'>
         <h1 className='text-[color:var(--primary-color)] text-xl '>
           {!isServer ? (
