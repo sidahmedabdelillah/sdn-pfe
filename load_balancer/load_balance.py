@@ -1,3 +1,4 @@
+import enum
 import json
 from select import select
 from socket import MsgFlag
@@ -17,12 +18,28 @@ from ryu.lib.packet import ethernet
 from ryu.app.wsgi import ControllerBase
 from ryu.controller.controller import Datapath
 
+import logging
 import sys
 print("Python version")
 print (sys.version)
 print("Version info.")
 print (sys.version_info)
 
+
+Log_Format = "%(levelname)s %(asctime)s - %(message)s"
+
+logging.basicConfig(filename = "logfile.log",
+                    filemode = "w",
+                    format = Log_Format, 
+                    level = logging.INFO)
+
+fileLogger = logging.getLogger()
+
+
+
+
+class LoadBalanerMethods(enum.Enum):
+    round_robin = 1
 
 
 from typing import List
@@ -33,7 +50,7 @@ from ryu.lib.mac import HADDR_PATTERN
 from ryu.app.wsgi import route, Response
 
 
-from classes.server import ServerEncoder
+from classes.server import ServerEncoder, Server
 from db.server import get_servers_from_db, add_server_to_db, delete_server_from_db_with_mac
 
 
@@ -55,7 +72,11 @@ class LoadBalncer(app_manager.RyuApp):
     VIRTUAL_IP = '10.0.0.100'  # The virtual server IP
 
     servers : List[Server] = get_servers_from_db()
+    next_server : Server = servers[0] if len(servers) else None
+    next_server_index = 0
+    method = LoadBalanerMethods.round_robin
     
+    fileLogger = fileLogger
     datapaths = []
 
     mac_to_port = {}
@@ -96,6 +117,7 @@ class LoadBalncer(app_manager.RyuApp):
             mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
                                     match=match, instructions=inst)
         datapath.send_msg(mod)
+        self.logger
 
     
     # table-miss flow
@@ -241,12 +263,22 @@ class LoadBalncer(app_manager.RyuApp):
         src_ip = self.VIRTUAL_IP
 
         # chosing a random server from the servers array
-        chosen_server = choice(self.servers)
+        if(self.method == LoadBalanerMethods.round_robin):
+            chosen_server : Server = self.next_server
+            print('servers ' ,self.servers)
+            print('next_server_index before ' ,self.next_server_index)
+            print('next_server_index before length' ,len(self.servers))
+
+            self.next_server_index = self.next_server_index + 1 if self.next_server_index + 1 < len(self.servers) else 0
+            print('next_server_index after ' ,self.next_server_index)
+
+            self.next_server = self.servers[self.next_server_index]
         src_mac = chosen_server.mac
 
 
         # logging the chosen mac
         self.logger.info("Selected server MAC: " + src_mac)
+        self.fileLogger.info("Selected server with mac: " + chosen_server.mac + " for request from :" + dst_mac)
 
         pkt = packet.Packet()
 
@@ -386,6 +418,7 @@ class LoadBalncerRest(ControllerBase):
         
 
         self.load_balancer_app.servers.append(server)
+        self.load_balancer_app.next_server = server
         
         for datapath in self.load_balancer_app.datapaths:
             self.load_balancer_app.delete_flow(datapath)
@@ -416,6 +449,8 @@ class LoadBalncerRest(ControllerBase):
 
         for datapath in self.load_balancer_app.datapaths:
             self.load_balancer_app.delete_flow(datapath)
+
+        self.load_balancer_app.datapaths = {}
 
         body = json.dumps({
             "msg" : "server deleted succesffuly"
