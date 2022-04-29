@@ -15,11 +15,14 @@ from ryu.lib.packet import ipv4
 from ryu.lib.packet.ether_types import ETH_TYPE_IP
 from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
+from ryu.lib.mac import haddr_to_int
 from ryu.app.wsgi import ControllerBase
 from ryu.controller.controller import Datapath
 
 import logging
 import sys
+
+from db.load_balancer import get_load_balancers_from_db
 print("Python version")
 print (sys.version)
 print("Version info.")
@@ -40,6 +43,7 @@ fileLogger = logging.getLogger()
 
 class LoadBalanerMethods(enum.Enum):
     round_robin = 1
+    hashed_mac  = 2
 
 
 from typing import List
@@ -74,7 +78,12 @@ class LoadBalncer(app_manager.RyuApp):
     servers : List[Server] = get_servers_from_db()
     next_server : Server = servers[0] if len(servers) else None
     next_server_index = 0
+    
+    
+    load_balancers = get_load_balancers_from_db()
+    print(load_balancers)
     method = LoadBalanerMethods.round_robin
+
     
     fileLogger = fileLogger
     datapaths = []
@@ -98,6 +107,34 @@ class LoadBalncer(app_manager.RyuApp):
                 out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY,
                 priority=1, match=match)
             datapath.send_msg(mod)
+
+    def chose_server(self , dst_mac):
+        if(self.method == LoadBalanerMethods.round_robin):
+            return self.chose_server_round_robin()
+        if(self.method == LoadBalanerMethods.hashed_mac):
+            return self.chose_server_mac_hash(dst_mac)
+
+
+    def chose_server_round_robin(self) -> Server:
+        chosen_server : Server = self.next_server
+        print('servers ' ,self.servers)
+        print('next_server_index before ' ,self.next_server_index)
+        print('next_server_index before length' ,len(self.servers))
+
+        self.next_server_index = self.next_server_index + 1 if self.next_server_index + 1 < len(self.servers) else 0
+        print('next_server_index after ' ,self.next_server_index)
+
+        self.next_server = self.servers[self.next_server_index]
+
+        return chosen_server
+    
+    def chose_server_mac_hash(self,mac) -> Server:
+        int_mac = haddr_to_int(mac)
+        server_count = len(self.servers)
+
+        server_index = int_mac % server_count
+
+        return self.servers[server_index]
 
     # add flow function 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
@@ -263,16 +300,11 @@ class LoadBalncer(app_manager.RyuApp):
         src_ip = self.VIRTUAL_IP
 
         # chosing a random server from the servers array
-        if(self.method == LoadBalanerMethods.round_robin):
-            chosen_server : Server = self.next_server
-            print('servers ' ,self.servers)
-            print('next_server_index before ' ,self.next_server_index)
-            print('next_server_index before length' ,len(self.servers))
+        
+        chosen_server = self.chose_server(dst_mac)
 
-            self.next_server_index = self.next_server_index + 1 if self.next_server_index + 1 < len(self.servers) else 0
-            print('next_server_index after ' ,self.next_server_index)
+        if( not chosen_server ) : return 
 
-            self.next_server = self.servers[self.next_server_index]
         src_mac = chosen_server.mac
 
 
