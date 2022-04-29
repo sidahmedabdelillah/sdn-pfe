@@ -12,13 +12,28 @@ def __01__create__migrations__table(db : Connection):
             """
         )
 
-
-def __02__create__servers__database(db : Connection):
+def __02__create__load_balancers__list(db:Connection):
     with db:
         cursor = db.cursor()
         cursor.execute(
             """
-            CREATE TABLE servers(mac varchar(17), ip varchar(20), port int)
+            CREATE TABLE load_balancers(id char(16) PRIMARY KEY , method int)
+            """
+        )
+
+
+def __03__create__servers__database(db : Connection):
+    with db:
+        cursor = db.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE servers(
+                mac varchar(17), 
+                ip varchar(20), 
+                port int,
+                load_balancer_id char(16),
+                FOREIGN KEY (load_balancer_id) REFERENCES parent(load_balancers)
+                )
             """
         )
 
