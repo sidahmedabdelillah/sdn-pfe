@@ -2,12 +2,21 @@ import React, { useEffect, useState } from "react";
 import { Button } from "primereact/button";
 import { Chip } from "primereact/chip";
 
-import { ConfirmDialog } from "primereact/confirmdialog";
+import { confirmDialog, ConfirmDialog } from "primereact/confirmdialog";
 
 import useSideBarStore from "../../../stores/sideBarStore";
 import useTopologyStore from "../../../stores/TopologyStore";
 import { SwitchInterface } from "../../../types/Topology";
 import useLoadBalancersStore from "../../../stores/loadBalancerStore";
+import { useDeleteLoadBalancerApi, usePostLoadBalancerApi } from "../../../hooks/useTopologyApi";
+import { getLoadBalancers } from "../../../api/loadBalancerApi";
+import useAxiosStore from "../../../stores/axiosStore";
+
+const emptyLoadBalancerToPost = {
+  dpid: ''
+} as {
+  dpid: string
+}
 
 const SwitchOverView: React.FC = () => {
   const [isLoadBalancer , setIsLoadBalancer] = useState(false);
@@ -16,7 +25,54 @@ const SwitchOverView: React.FC = () => {
   const { selectedHost } = useSideBarStore();
   const { switches } = useTopologyStore();
   
-  const { loadBalancers, getIsLoadBalancer } = useLoadBalancersStore()
+  const { loadBalancers, getIsLoadBalancer, setLoadBalancers : setStoreLoadBalancers } = useLoadBalancersStore()
+  const [ loadBalancerToPost, setLoadBalancerToPost ] = useState(emptyLoadBalancerToPost)
+  const { postLoadBalancerApi , postLoadBalancerError} = usePostLoadBalancerApi(loadBalancerToPost)
+  const { deletLoadBalancerApi , deleteLoadBalancerError} = useDeleteLoadBalancerApi(selectedHost)
+  const { BaseUrl } = useAxiosStore();
+
+
+  const handlePostClick =  () => {
+    confirmDialog({
+      message: 'Are you Sure you want to add this node to the server cluster ?',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => postLoadBalancer(),
+      reject: () => null
+  });
+  }
+
+  const postLoadBalancer = async () => {
+    if(loadBalancerToPost === emptyLoadBalancerToPost ) return
+    postLoadBalancerApi()
+    if(postLoadBalancerError){
+      console.log(postLoadBalancerError)
+    }
+
+    setTimeout(async () => {
+      const loadBalancers = await getLoadBalancers(BaseUrl)
+      setStoreLoadBalancers(loadBalancers)
+    })
+    
+  }
+
+  const deleteServer = () => {
+    deletLoadBalancerApi()
+    if(deleteLoadBalancerError){
+      console.log(deleteLoadBalancerError)
+    }
+    setTimeout(async () => {
+      const loadBalancers = await getLoadBalancers(BaseUrl)
+      setStoreLoadBalancers(loadBalancers)
+    })
+  }
+  const handleDeleteClick =  () => {
+    confirmDialog({
+      message: 'Are you Sure you want remove loadBalancer functionality from this switch ?',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => deleteServer(),
+      reject: () => null
+  });
+  }
 
   useEffect(() => {
     console.log(selectedHost);
@@ -24,7 +80,14 @@ const SwitchOverView: React.FC = () => {
     if (foundSwitch) {
       setSwitch(foundSwitch);
     }
+
   }, [selectedHost, switches]);
+
+  useEffect(() => {
+    if(selectedHost){
+      setLoadBalancerToPost({dpid: selectedHost})
+    }
+  } ,[selectedHost])
 
   useEffect(() => {
     setIsLoadBalancer(getIsLoadBalancer(selectedHost))
@@ -71,11 +134,11 @@ const SwitchOverView: React.FC = () => {
       ))}
 
       {!isLoadBalancer && (
-        <Button className="mt-4"> Add as Load Balancer </Button>
+        <Button className="mt-4" onClick={handlePostClick}> Add as Load Balancer </Button>
       )}
-      
+
       {isLoadBalancer && (
-        <Button className="mt-4"> Remove server from server cluster </Button>
+        <Button className="mt-4" onClick={handleDeleteClick}> Remove server from server cluster </Button>
       )}
     </>
   );

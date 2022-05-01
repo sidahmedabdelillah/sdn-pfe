@@ -59,3 +59,18 @@ export const useLoadBalancersApi = (longPooling:boolean = false) => {
   >('v1/loadbalancer/loadbalancers', interval)
   return { loadBalancersData, reloadLoadBalancers }
 }
+
+export const usePostLoadBalancerApi = (body: any) => {
+  const { postData: postLoadBalancerApi, error: postLoadBalancerError } = useAxiosPost(
+    'v1/loadbalancer/loadbalancers',
+    body
+  )
+
+  return { postLoadBalancerApi ,postLoadBalancerError }
+}
+
+export const useDeleteLoadBalancerApi = (mac : string | undefined) => {
+  const {deleteData : deletLoadBalancerApi ,error: deleteLoadBalancerError } = useAxiosDelete(`v1/loadbalancer/loadbalancers/${mac}`);
+  return {deletLoadBalancerApi,deleteLoadBalancerError
+  }
+}
