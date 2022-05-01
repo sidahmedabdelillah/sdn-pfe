@@ -5,6 +5,7 @@ import TopologyOverView from './SideBarMenues/TopologyOverView'
 import useSideBarStore, { SidBarTabsEnum } from '../../stores/sideBarStore'
 import HostOverView from './SideBarMenues/HostOverView'
 import Settings from './SideBarMenues/Settings'
+import SwitchOverView from './SideBarMenues/SwitchOverView'
 const SideBar: React.FC = ({ children }) => {
   const { activeTab } = useSideBarStore()
 
@@ -17,6 +18,8 @@ const SideBar: React.FC = ({ children }) => {
                 return <TopologyOverView />
             case SidBarTabsEnum.HostOverView:
                 return <HostOverView />
+            case SidBarTabsEnum.SwitchView:
+                return <SwitchOverView />
             case SidBarTabsEnum.SettingsView:
                 return <Settings />
           }

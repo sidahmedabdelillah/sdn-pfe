@@ -36,3 +36,9 @@ export interface ServerInterface {
   mac: string,
   port: number
 }
+
+export interface LoadBalancerInterface {
+  datapath:string,
+  method:number,
+  method_name:string
+}

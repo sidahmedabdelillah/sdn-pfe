@@ -4,8 +4,8 @@ import create  from "zustand";
 export enum SidBarTabsEnum {
   TopologyOverView = 'TopologyOverView',
   HostOverView = 'HostOverView',
-  SettingsView = 'SettingsView' 
-
+  SettingsView = 'SettingsView' ,
+  SwitchView = 'SwitchView'
 }
 
 interface SideBarState {
@@ -30,7 +30,6 @@ const useSideBarStore = create<SideBarState>((set) => ({
           ...state,
           selectedHost: host
       }))
-
   }
 }));
 

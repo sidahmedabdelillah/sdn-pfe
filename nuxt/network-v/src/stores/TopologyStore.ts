@@ -11,6 +11,7 @@ interface TopologyState {
   setHosts: (hostsToSet : HostInterface[])=> void,
   setLinks: (links: LinkInterface[]) => void,
   setIsTopologyError : (s : boolean ) => void ,
+
 }
 
 const useTopologyStore = create<TopologyState>((set) => ({

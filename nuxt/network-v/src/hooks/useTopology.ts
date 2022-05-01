@@ -1,8 +1,9 @@
 import { ConnectedOverlayScrollHandler } from 'primereact/utils'
 import { useEffect, useState } from 'react'
+import useLoadBalancersStore from '../stores/loadBalancerStore'
 import useServersStore from '../stores/serverStore'
 import useTopologyStore from '../stores/TopologyStore'
-import useTopologyApi, { useServersApi } from './useTopologyApi'
+import useTopologyApi, { useLoadBalancersApi, useServersApi } from './useTopologyApi'
 
 type nodeType = {
   id: string
@@ -27,6 +28,8 @@ export default function useTopology() {
   const { servers : storeServers , setServers : setStoreServers }  = useServersStore();
   const { serversData } = useServersApi()
 
+  const { loadBalancers: storeLoadBalancer , setLoadBalancers : setStoreLoadBalancers } = useLoadBalancersStore()
+  const  { loadBalancersData } = useLoadBalancersApi()
 
   const [links, setLinks] = useState<linkType[]>([]);
   const [nodes, setNodes] = useState<nodeType[]>([]);
@@ -49,7 +52,11 @@ export default function useTopology() {
     }
   },[serversData, setStoreServers]);
 
- 
+  useEffect(() => {
+    if(loadBalancersData){
+      setStoreLoadBalancers(loadBalancersData)
+    }
+  },[loadBalancersData, setStoreLoadBalancers])
 
 
   useEffect(() => {
@@ -126,10 +133,17 @@ export default function useTopology() {
       }
     })
 
+    storeLoadBalancer?.forEach(loadbalancer => {
+      const index = switches.findIndex(s => s.id === loadbalancer.datapath)
+      if(index > -1){
+        switches[index].type = 'loadbalancer'
+      } 
+    })
+
 
     setLinks([...switchLinks, ...hostLinks])
     setNodes([...switches, ...hosts])
-  }, [storeHosts, storeLinks, storeServers, storeSwitches])
+  }, [storeHosts, storeLinks, storeLoadBalancer, storeServers, storeSwitches])
 
   return { links, nodes }
 }

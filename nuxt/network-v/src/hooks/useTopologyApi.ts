@@ -1,6 +1,7 @@
 import {
   HostInterface,
   LinkInterface,
+  LoadBalancerInterface,
   ServerInterface,
   SwitchInterface,
 } from '../types/Topology'
@@ -48,4 +49,13 @@ export const useDeleteServerApi = (mac : string | undefined) => {
     const {deleteData : deleteServerApi ,error: deleteServerError } = useAxiosDelete(`v1/loadbalancer/servers/${mac}`);
     return {deleteServerApi,deleteServerError
     }
+}
+
+export const useLoadBalancersApi = (longPooling:boolean = false) => {
+  const interval = longPooling ? 10000 : 0 ;
+
+  const { data: loadBalancersData, reload: reloadLoadBalancers } = useAxiosGet<
+    LoadBalancerInterface[]
+  >('v1/loadbalancer/loadbalancers', interval)
+  return { loadBalancersData, reloadLoadBalancers }
 }

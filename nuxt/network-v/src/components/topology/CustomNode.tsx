@@ -13,7 +13,7 @@ const CustomNode = <Node extends InputNode>({
   onMouseMove,
   onMouseLeave,
 }: NodeProps<Node>) => {
-  if (node.data.type === 'switch') {
+  if (node.data.type === 'switch' || node.data.type === 'loadbalancer' ) {
     return (
       <SwitchNode
         node={node}
