@@ -20,7 +20,7 @@ const emptyLoadBalancerToPost = {
 
 const SwitchOverView: React.FC = () => {
   const [isLoadBalancer , setIsLoadBalancer] = useState(false);
-  const [switche, setSwitch] = useState<SwitchInterface>(null);
+  const [switche, setSwitch] = useState<SwitchInterface | null>(null);
 
   const { selectedHost } = useSideBarStore();
   const { switches } = useTopologyStore();
@@ -34,7 +34,7 @@ const SwitchOverView: React.FC = () => {
 
   const handlePostClick =  () => {
     confirmDialog({
-      message: 'Are you Sure you want to add this node to the server cluster ?',
+      message: 'Are you Sure you want to add load balancing functionality to this switch ?',
       icon: 'pi pi-exclamation-triangle',
       accept: () => postLoadBalancer(),
       reject: () => null
