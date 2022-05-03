@@ -21,8 +21,9 @@ from ryu.controller.controller import Datapath
 
 import logging
 import sys
+from classes.load_balancer import LoadBalancer, LoadBalancerEncoder, LoadBalanerMethods
 
-from db.load_balancer import get_load_balancers_from_db
+from db.load_balancer import add_loadbalancer_to_db, delete_loadbalancer_from_db, get_load_balancers_from_db
 print("Python version")
 print (sys.version)
 print("Version info.")
@@ -41,9 +42,7 @@ fileLogger = logging.getLogger()
 
 
 
-class LoadBalanerMethods(enum.Enum):
-    round_robin = 1
-    hashed_mac  = 2
+
 
 
 from typing import List
@@ -80,7 +79,7 @@ class LoadBalncer(app_manager.RyuApp):
     next_server_index = 0
     
     
-    load_balancers = get_load_balancers_from_db()
+    load_balancers : List[LoadBalancer] = get_load_balancers_from_db()
     print(load_balancers)
     method = LoadBalanerMethods.round_robin
 
@@ -96,6 +95,11 @@ class LoadBalncer(app_manager.RyuApp):
         wsgi = kwargs['wsgi']
         wsgi.register(LoadBalncerRest, {load_balancer_instance_name: self})
     
+
+    def get_load_balancer_with_datapath(self , id) -> LoadBalancer:
+        for load_balancer in self.load_balancers:
+            if load_balancer.datapath == id : return load_balancer
+
     def delete_flow(self, datapath):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -133,8 +137,12 @@ class LoadBalncer(app_manager.RyuApp):
         server_count = len(self.servers)
 
         server_index = int_mac % server_count
-
         return self.servers[server_index]
+
+    def get_server_with_mac(self ,mac):
+        for server in self.servers:
+            if server.mac == mac : return server
+
 
     # add flow function 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
@@ -301,6 +309,7 @@ class LoadBalncer(app_manager.RyuApp):
 
         # chosing a random server from the servers array
         
+
         chosen_server = self.chose_server(dst_mac)
 
         if( not chosen_server ) : return 
@@ -389,9 +398,7 @@ class LoadBalncer(app_manager.RyuApp):
             packet_handled = True
         return packet_handled
     
-    def get_server_with_mac(self ,mac):
-        for server in self.servers:
-            if server.mac == mac : return server
+
 
 
 
@@ -411,6 +418,8 @@ class LoadBalncerRest(ControllerBase):
         super(LoadBalncerRest, self).__init__(req, link, data, **config)
         self.load_balancer_app : LoadBalncer = data[load_balancer_instance_name]
 
+
+    # Servers Options Cors
     @route('loadbalancer' , '/v1/loadbalancer/servers' , methods=["OPTIONS"])
     def _options_response(self,req,**kwargs):
         print('here')
@@ -418,13 +427,14 @@ class LoadBalncerRest(ControllerBase):
         print(r)
         return r
 
+    # Server route
     @route('loadbalancer','/v1/loadbalancer/servers', methods=["GET"])
     def _send_server(self, req, **kwargs):
         body = json.dumps([s for s in self.load_balancer_app.servers],cls=ServerEncoder)
         return create_response(body)
 
 
-
+    # add server route
     @route('loadbalancer' , '/v1/loadbalancer/servers'
         ,methods=['POST'], requirements={
             "mac" : HADDR_PATTERN,
@@ -488,5 +498,65 @@ class LoadBalncerRest(ControllerBase):
             "msg" : "server deleted succesffuly"
         })
         return create_response(body=body)
-        
+
+
+
+    @route('loadbalancer' , '/v1/loadbalancer/loadbalancers' , methods=["GET"])
+    def _send_loadbalancers(self, req, **kwargs):
+        body = json.dumps([l for l in self.load_balancer_app.load_balancers],cls=LoadBalancerEncoder)
+        return create_response(body)
+
+
+    # Servers Options Cors
+    @route('loadbalancer' , '/v1/loadbalancer/loadbalancers' , methods=["OPTIONS"])
+    def _options_response(self,req,**kwargs):
+        r = create_response({})
+        return r
+
+    # add loadBalancer route
+    @route('loadbalancer' , '/v1/loadbalancer/loadbalancers'
+        ,methods=['POST'] )
+    @post_method(
+        keywords={
+            "dpid": str,
+        },
+    )
+    def _add_server(self, **kwargs):
+        dpid = kwargs['dpid']
+
+        load_balancer = add_loadbalancer_to_db(dpid ,1 )
+        self.load_balancer_app.load_balancers.append(load_balancer)
     
+        response = {
+            "msg" : "loadbalancer successfully added",
+            "data" : {
+                "loadbalancer" : load_balancer
+            }
+        }
+
+        body = json.dumps(response , cls=ServerEncoder)
+        return create_response(body=body)
+
+    
+    @route('loadbalancer' , '/v1/loadbalancer/loadbalancers/{dpid}' , methods=["OPTIONS"])
+    def _delete_options_response(self,req,**kwargs):
+        r = create_response({})
+        print(r)
+        return r
+
+    @route('loadbalancer' , '/v1/loadbalancer/loadbalancers/{dpid}' , methods=["DELETE"])
+    def _delete_server(self , req , **kwargs):
+        dpid = kwargs['dpid']
+
+        load_balancers = delete_loadbalancer_from_db(dpid)
+        self.load_balancer_app.load_balancers = load_balancers
+
+        for datapath in self.load_balancer_app.datapaths:
+            self.load_balancer_app.delete_flow(datapath)
+
+        self.load_balancer_app.datapaths = {}
+
+        body = json.dumps({
+            "msg" : "server deleted succesffuly"
+        })
+        return create_response(body=body)

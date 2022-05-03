@@ -17,9 +17,15 @@ def __02__create__load_balancers__list(db:Connection):
         cursor = db.cursor()
         cursor.execute(
             """
-            CREATE TABLE load_balancers(id char(16) PRIMARY KEY , method int)
+            CREATE TABLE load_balancers(
+                id char(16) PRIMARY KEY , 
+                method int,
+                virtual_ip varchar(20), 
+                )
             """
         )
+
+
 
 
 def __03__create__servers__database(db : Connection):
