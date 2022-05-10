@@ -20,7 +20,7 @@ def __02__create__load_balancers__list(db:Connection):
             CREATE TABLE load_balancers(
                 id char(16) PRIMARY KEY , 
                 method int,
-                virtual_ip varchar(20), 
+                virtual_ip varchar(20)
                 )
             """
         )
