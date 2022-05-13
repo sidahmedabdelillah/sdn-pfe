@@ -480,7 +480,7 @@ class LoadBalncerRest(ControllerBase):
         port = kwargs['port']
         dpid = kwargs['dpid']
 
-        server = add_server_to_db(ip , mac , port)
+        server = add_server_to_db(ip, mac, port, dpid)
         
 
         self.load_balancer_app.servers.append(server)
