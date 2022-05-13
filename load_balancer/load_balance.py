@@ -543,14 +543,16 @@ class LoadBalncerRest(ControllerBase):
     @post_method(
         keywords={
             "dpid": str,
-            "virtual_ip": str
+            "virtual_ip": str,
+            "method": int
         },
     )
     def _add_load_balancer(self, **kwargs):
         dpid = kwargs['dpid']
         virtual_ip = kwargs['virtual_ip']
+        method = kwargs['method']
 
-        load_balancer = add_loadbalancer_to_db(dpid ,1 ,virtual_ip)
+        load_balancer = add_loadbalancer_to_db(dpid ,method ,virtual_ip)
         self.load_balancer_app.load_balancers.append(load_balancer)
     
         response = {
