@@ -16,23 +16,29 @@ const CustomNode = <Node extends InputNode>({
 }: NodeProps<Node>) => {
         const size = node.data.size || animatedProps.size.get()  
         
-        const [imgUrl , setImageUrl ] = useState(switchSvg)
-        
-
+        const [ imgUrl , setImageUrl ] = useState(switchSvg)
+        const [ isLoadbalancer, setIsLoadBalancer ] = useState(false)
+    
         const { setSelectedHost , setActiveTab } = useSideBarStore()
 
         const handleClick = () => {
             setSelectedHost(node.data.id)
-            setActiveTab(SidBarTabsEnum.SwitchView)
+            if(!isLoadbalancer){
+                setActiveTab(SidBarTabsEnum.SwitchView)
+            }else{
+                setActiveTab(SidBarTabsEnum.LoadBalancerView)
+            }
         }
         
         useEffect(() => {
-            console.log(node.data.type)
+            
             if(node.data.type === 'switch'){
                 setImageUrl(switchSvg)
+                setIsLoadBalancer(false)
             }
             if(node.data.type === 'loadbalancer'){
                 setImageUrl(loadBalancerSvg)
+                setIsLoadBalancer(true)
             }
         },[node.data.type]);
 
