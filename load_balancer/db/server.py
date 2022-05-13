@@ -19,11 +19,11 @@ def get_servers_from_db() -> List[Server]:
     return servers
 
     
-def add_server_to_db(ip : str,mac : str,port : int) ->Server:
+def add_server_to_db(ip: str,mac: str,port: int, dpid: str) ->Server:
     with connection:
         cursor = connection.cursor()
 
-        cursor.execute("INSERT INTO servers(ip,mac,port) VALUES(?,?,?)",(ip,mac,port))
+        cursor.execute("INSERT INTO servers(ip,mac,port,load_balancer_id) VALUES(?,?,?,?)",(ip,mac,port,dpid))
     return Server(ip,mac,port)
 
 def delete_server_from_db_with_mac(mac : str):
