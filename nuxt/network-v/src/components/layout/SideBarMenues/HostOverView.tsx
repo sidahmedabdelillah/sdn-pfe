@@ -22,10 +22,12 @@ const HostOverView: React.FC = () => {
     ip: "",
     mac: "",
     port: 0,
+    dpid: ''
   } as {
     ip: string;
     mac: string;
     port: number;
+    dpid: string;
   };
   const [serverToPost, setServerToPost] = useState(emptyServerToPost);
   const { selectedHost } = useSideBarStore();
@@ -93,6 +95,7 @@ const HostOverView: React.FC = () => {
         ip: host.ipv4[0],
         mac: host.mac,
         port: Number(host.port.port_no),
+        dpid: host.port.dpid
       });
     }
   }, [host]);
@@ -105,7 +108,7 @@ const HostOverView: React.FC = () => {
 
   useEffect(() => {
     setIsServer(getIsServer(host?.mac));
-  }, [selectedHost, servers, host]);
+  }, [selectedHost, servers, host, getIsServer]);
 
   if (!host) {
     return <h1>Please Select a host</h1>;
