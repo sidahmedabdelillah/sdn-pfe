@@ -57,7 +57,7 @@ from db.server import get_servers_from_db, add_server_to_db, delete_server_from_
 
 
 from random import choice
-from utls.validators import validate_ip, validate_mac, validate_int
+from utls.validators import validate_dpid, validate_ip, validate_mac, validate_int
 
 from utls.rest_utils import post_method, create_response
 
@@ -464,18 +464,21 @@ class LoadBalncerRest(ControllerBase):
         keywords={
             "ip": str,
             "mac": str,
-            "port": int
+            "port": int,
+            "dpid": str,
         },
         validators={
             "ip" : validate_ip,
             "mac": validate_mac,
-            "port" : validate_int
+            "port" : validate_int,
+            "dpid": validate_dpid
         }
     )
     def _add_server(self, **kwargs):
         ip = kwargs['ip']
         mac = kwargs['mac']
         port = kwargs['port']
+        dpid = kwargs['dpid']
 
         server = add_server_to_db(ip , mac , port)
         
