@@ -3,9 +3,8 @@ import { Button } from "primereact/button";
 import { Chip } from "primereact/chip";
 
 import { confirmDialog, ConfirmDialog } from "primereact/confirmdialog";
-import { Toast, } from 'primereact/toast'
-
-
+import { Toast } from "primereact/toast";
+import { Dropdown } from "primereact/dropdown";
 
 import useSideBarStore from "../../../stores/sideBarStore";
 import useTopologyStore from "../../../stores/TopologyStore";
@@ -23,14 +22,21 @@ import { validateIpAddress } from "../../../utils/validators/validateIp";
 
 const emptyLoadBalancerToPost = {
   dpid: "",
-  virtual_ip: ''
+  virtual_ip: "",
 } as {
   dpid: string;
-  virtual_ip: string
+  virtual_ip: string;
 };
 
+const METHOD_OPTIONS = [
+  { label: "Round Robin", value: 1 },
+  { label: "Mac Hash", value: 2 },
+];
+
 const SwitchOverView: React.FC = () => {
-  const toastRef = useRef<Toast>(null)
+  const toastRef = useRef<Toast>(null);
+
+  const [selectedMethod, setSelectedMethod] = useState(METHOD_OPTIONS[0].value);
 
   const [isLoadBalancer, setIsLoadBalancer] = useState(false);
   const [switche, setSwitch] = useState<SwitchInterface | null>(null);
@@ -39,7 +45,7 @@ const SwitchOverView: React.FC = () => {
   const { switches } = useTopologyStore();
 
   const [displayDialog, setDisplayDialog] = useState(false);
-  const [inputIp , setInputIp ] = useState('')
+  const [inputIp, setInputIp] = useState("");
 
   const {
     loadBalancers,
@@ -55,31 +61,34 @@ const SwitchOverView: React.FC = () => {
     useDeleteLoadBalancerApi(selectedHost);
   const { BaseUrl } = useAxiosStore();
 
-  
-
   const showDialog = () => setDisplayDialog(true);
   const onHide = () => setDisplayDialog(false);
 
   useEffect(() => {
     setLoadBalancerToPost((loadBalancerToPost) => ({
       ...loadBalancerToPost,
-      virtual_ip : inputIp
-    }))
-  }, [inputIp])
+      virtual_ip: inputIp,
+      method: selectedMethod
+    }));
+  }, [inputIp, selectedMethod]);
+
 
   const handlePostClick = () => {
-    if(! validateIpAddress(inputIp)){
-      toastRef.current?.show({severity:'error' ,summary:'invalid Ip Address'})
-      return 
+    if (!validateIpAddress(inputIp)) {
+      toastRef.current?.show({
+        severity: "error",
+        summary: "invalid Ip Address",
+      });
+      return;
     }
 
-    console.log(loadBalancerToPost)
-    console.log(inputIp)
-    postLoadBalancerApi()
-    if(postLoadBalancerError){
-      console.log(postLoadBalancerError)
+    console.log(loadBalancerToPost);
+    console.log(inputIp);
+    postLoadBalancerApi();
+    if (postLoadBalancerError) {
+      console.log(postLoadBalancerError);
     }
-    setDisplayDialog(false)
+    setDisplayDialog(false);
     setTimeout(async () => {
       const loadBalancers = await getLoadBalancers(BaseUrl);
       setStoreLoadBalancers(loadBalancers);
@@ -129,14 +138,13 @@ const SwitchOverView: React.FC = () => {
 
   useEffect(() => {
     if (selectedHost) {
-      setLoadBalancerToPost({ dpid: selectedHost,virtual_ip:inputIp });
+      setLoadBalancerToPost({ dpid: selectedHost, virtual_ip: inputIp });
     }
   }, [selectedHost]);
 
   useEffect(() => {
     setIsLoadBalancer(getIsLoadBalancer(selectedHost));
   }, [getIsLoadBalancer, loadBalancers, selectedHost]);
-
 
   const footer = (
     <div>
@@ -145,14 +153,13 @@ const SwitchOverView: React.FC = () => {
     </div>
   );
 
-
   if (!switche) {
     return <h1>Please Select a host</h1>;
   }
 
   return (
-    <>  
-      <Toast ref={toastRef}/>
+    <>
+      <Toast ref={toastRef} />
       <ConfirmDialog />
       <Dialog
         visible={displayDialog}
@@ -165,9 +172,23 @@ const SwitchOverView: React.FC = () => {
         </h1>
         <div className="flex justify-center w-full">
           <span className="p-float-label w-80">
-            <InputText id="inputtext" className="w-full" value={inputIp} onChange={ e => setInputIp(e.target.value)} />
+            <InputText
+              id="inputtext"
+              className="w-full"
+              value={inputIp}
+              onChange={(e) => setInputIp(e.target.value)}
+            />
             <label htmlFor="inputtext">Ip Address</label>
           </span>
+        </div>
+
+        <div className="flex justify-center w-full mt-2">
+          <Dropdown
+            value={selectedMethod}
+            options={METHOD_OPTIONS}
+            onChange={(e) => setSelectedMethod(e.value)}
+            className="w-80"
+          />
         </div>
       </Dialog>
       <div className="mb-8">
@@ -196,23 +217,21 @@ const SwitchOverView: React.FC = () => {
       <Chip label="Switch DPID" />
       <p> {switche.dpid} </p>
 
-      {
-        isLoadBalancer && 
+      {isLoadBalancer && (
         <>
           <Chip label="Load balancer" />
           <p> {switche.dpid} </p>
-        </> 
-      }
+        </>
+      )}
 
-      {
-        !isLoadBalancer  &&
+      {!isLoadBalancer && (
         <>
           <Chip label="Ports" className="mt-4" />
           {switche.ports.map((port) => (
-              <p key={port.hw_addr} >{port.name}</p>
+            <p key={port.hw_addr}>{port.name}</p>
           ))}
         </>
-      }
+      )}
 
       {!isLoadBalancer && (
         <Button className="mt-4" onClick={showDialog}>
