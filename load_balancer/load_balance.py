@@ -1,7 +1,5 @@
-import enum
 import json
 from select import select
-from socket import MsgFlag
 from xmlrpc.client import Server
 from ryu.app.wsgi import WSGIApplication
 from ryu.base import app_manager
@@ -15,6 +13,7 @@ from ryu.lib.packet import ipv4
 from ryu.lib.packet.ether_types import ETH_TYPE_IP
 from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
+from ryu.lib.dpid import dpid_to_str
 from ryu.lib.mac import haddr_to_int
 from ryu.app.wsgi import ControllerBase
 from ryu.controller.controller import Datapath
@@ -23,7 +22,7 @@ import logging
 import sys
 from classes.load_balancer import LoadBalancer, LoadBalancerEncoder, LoadBalanerMethods
 
-from db.load_balancer import add_loadbalancer_to_db, delete_loadbalancer_from_db, get_load_balancers_from_db
+from db.load_balancer import add_loadbalancer_to_db, delete_loadbalancer_from_db, get_load_balancers_from_db, get_servers_for_load_balancer_from_db
 print("Python version")
 print (sys.version)
 print("Version info.")
@@ -75,10 +74,9 @@ class LoadBalncer(app_manager.RyuApp):
     VIRTUAL_IP = '10.0.0.100'  # The virtual server IP
 
     servers : List[Server] = get_servers_from_db()
-    next_server : Server = servers[0] if len(servers) else None
-    next_server_index = 0
-    
-    
+
+    round_robin_indexes = {}
+
     load_balancers : List[LoadBalancer] = get_load_balancers_from_db()
     print(load_balancers)
     method = LoadBalanerMethods.round_robin
@@ -111,38 +109,47 @@ class LoadBalncer(app_manager.RyuApp):
                 out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY,
                 priority=1, match=match)
             datapath.send_msg(mod)
-
-    def chose_server(self , dst_mac):
-        if(self.method == LoadBalanerMethods.round_robin):
-            return self.chose_server_round_robin()
-        if(self.method == LoadBalanerMethods.hashed_mac):
-            return self.chose_server_mac_hash(dst_mac)
-
-
-    def chose_server_round_robin(self) -> Server:
-        chosen_server : Server = self.next_server
-        print('servers ' ,self.servers)
-        print('next_server_index before ' ,self.next_server_index)
-        print('next_server_index before length' ,len(self.servers))
-
-        self.next_server_index = self.next_server_index + 1 if self.next_server_index + 1 < len(self.servers) else 0
-        print('next_server_index after ' ,self.next_server_index)
-
-        self.next_server = self.servers[self.next_server_index]
-
-        return chosen_server
     
-    def chose_server_mac_hash(self,mac) -> Server:
+    def get_load_balancer_from_datapath(self , datapath: Datapath):
+        for lb in self.load_balancers:
+            if dpid_to_str(datapath.id) == lb.datapath :
+                print(dpid_to_str(datapath.id) == lb.datapath)
+                return lb
+            return None 
+
+    def get_servers_for_load_balancer(self , datapath: LoadBalancer):
+        servers = get_servers_for_load_balancer_from_db(datapath.datapath)
+        return servers
+        
+
+    def chose_server(self , dst_mac: str , servers :List[Server] ,load_balancer:  LoadBalancer ):
+        if(load_balancer.method == LoadBalanerMethods.round_robin.value):
+            return self.chose_server_round_robin(servers , load_balancer)
+        if(load_balancer.method == LoadBalanerMethods.hashed_mac.value):
+            return self.chose_server_mac_hash(dst_mac , servers)
+
+
+    def chose_server_round_robin(self , servers : List[Server] , load_balancer : LoadBalancer) -> Server:
+        size = len(servers)
+        if (not size ):
+            return False
+        
+        next_index = (self.round_robin_indexes[load_balancer.datapath] + 1) % size
+        
+        self.round_robin_indexes[load_balancer.datapath] = next_index
+
+        return servers[self.round_robin_indexes[load_balancer.datapath]]
+    
+    def chose_server_mac_hash(self,mac: str, servers :List[Server]) -> Server:
         int_mac = haddr_to_int(mac)
-        server_count = len(self.servers)
+        server_count = len(servers)
 
         server_index = int_mac % server_count
-        return self.servers[server_index]
+        return servers[server_index]
 
     def get_server_with_mac(self ,mac):
         for server in self.servers:
             if server.mac == mac : return server
-
 
     # add flow function 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
@@ -172,6 +179,8 @@ class LoadBalncer(app_manager.RyuApp):
 
 
         self.datapaths.append(datapath)
+        self.round_robin_indexes[dpid_to_str(datapath.id)] = 0
+        print(self.round_robin_indexes)
         
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -262,11 +271,14 @@ class LoadBalncer(app_manager.RyuApp):
         if eth.ethertype == ether_types.ETH_TYPE_ARP:
             arp_header = pkt.get_protocol(arp.arp)
 
+            # TODO change this
             if arp_header.dst_ip == self.VIRTUAL_IP and arp_header.opcode == arp.ARP_REQUEST:
                 self.logger.info("***************************")
                 self.logger.info("---Handle ARP Packet---")
                 # Build an ARP reply packet using source IP and source MAC
-                reply_packet = self.generate_arp_reply(arp_header.src_ip, arp_header.src_mac)
+                reply_packet = self.generate_arp_reply(arp_header.src_ip, arp_header.src_mac , datapath)
+
+                if (not reply_packet): return
                 actions = [parser.OFPActionOutput(in_port)]
                 packet_out = parser.OFPPacketOut(datapath=datapath, in_port=ofproto.OFPP_ANY,
                                                  data=reply_packet.data, actions=actions, buffer_id=0xffffffff)
@@ -299,20 +311,29 @@ class LoadBalncer(app_manager.RyuApp):
         datapath.send_msg(out)
 
     # Source IP and MAC passed here now become the destination for the reply packet
-    def generate_arp_reply(self, dst_ip, dst_mac):
-        self.logger.info("Generating ARP Reply Packet")
-        self.logger.info("ARP request client ip: " + dst_ip + ", client mac: " + dst_mac)
+    def generate_arp_reply(self, dst_ip, dst_mac , datapath: Datapath):
+        load_balancer =  self.get_load_balancer_from_datapath(datapath)
+    
+        if(load_balancer == None) :
+            print('no load balancer')
+
+        servers = self.get_servers_for_load_balancer(load_balancer)
+        
+        src_ip = load_balancer.virtual_ip
         arp_target_ip = dst_ip  # the sender ip
         arp_target_mac = dst_mac  # the sender mac
-        # Making the load balancer IP as source IP
-        src_ip = self.VIRTUAL_IP
 
-        # chosing a random server from the servers array
+        self.logger.info("Generating ARP Reply Packet")
+        self.logger.info("ARP request client ip: " + dst_ip + ", client mac: " + dst_mac )
+
+
+
+        chosen_server = self.chose_server(dst_mac , servers,load_balancer)
+
+        print('chosen server' , chosen_server)
         
 
-        chosen_server = self.chose_server(dst_mac)
-
-        if( not chosen_server ) : return 
+        if( not chosen_server ) : return  None
 
         src_mac = chosen_server.mac
 
@@ -345,7 +366,7 @@ class LoadBalncer(app_manager.RyuApp):
         packet_handled = False
 
         # if the packet is for the VIRTUAL_IP
-
+        # TODO this
         if ip_header.dst == self.VIRTUAL_IP:
 
             # find the packet with the chosen mac
@@ -421,7 +442,7 @@ class LoadBalncerRest(ControllerBase):
 
     # Servers Options Cors
     @route('loadbalancer' , '/v1/loadbalancer/servers' , methods=["OPTIONS"])
-    def _options_response(self,req,**kwargs):
+    def _options_response_servers(self,req,**kwargs):
         print('here')
         r = create_response({})
         print(r)
@@ -477,7 +498,7 @@ class LoadBalncerRest(ControllerBase):
 
 
     @route('loadbalancer' , '/v1/loadbalancer/servers/{mac}' , methods=["OPTIONS"])
-    def _delete_options_response(self,req,**kwargs):
+    def _delete_options_response_servers(self,req,**kwargs):
         r = create_response({})
         print(r)
         return r
@@ -519,12 +540,14 @@ class LoadBalncerRest(ControllerBase):
     @post_method(
         keywords={
             "dpid": str,
+            "virtual_ip": str
         },
     )
-    def _add_server(self, **kwargs):
+    def _add_load_balancer(self, **kwargs):
         dpid = kwargs['dpid']
+        virtual_ip = kwargs['virtual_ip']
 
-        load_balancer = add_loadbalancer_to_db(dpid ,1 )
+        load_balancer = add_loadbalancer_to_db(dpid ,1 ,virtual_ip)
         self.load_balancer_app.load_balancers.append(load_balancer)
     
         response = {
@@ -545,7 +568,7 @@ class LoadBalncerRest(ControllerBase):
         return r
 
     @route('loadbalancer' , '/v1/loadbalancer/loadbalancers/{dpid}' , methods=["DELETE"])
-    def _delete_server(self , req , **kwargs):
+    def _delete_server_loadbalancers(self , req , **kwargs):
         dpid = kwargs['dpid']
 
         load_balancers = delete_loadbalancer_from_db(dpid)
