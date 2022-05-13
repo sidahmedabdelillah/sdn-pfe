@@ -6,6 +6,7 @@ import useSideBarStore, { SidBarTabsEnum } from '../../stores/sideBarStore'
 import HostOverView from './SideBarMenues/HostOverView'
 import Settings from './SideBarMenues/Settings'
 import SwitchOverView from './SideBarMenues/SwitchOverView'
+import LoadbalancerView from './SideBarMenues/LoadBalancer'
 const SideBar: React.FC = ({ children }) => {
   const { activeTab } = useSideBarStore()
 
@@ -20,6 +21,8 @@ const SideBar: React.FC = ({ children }) => {
                 return <HostOverView />
             case SidBarTabsEnum.SwitchView:
                 return <SwitchOverView />
+            case SidBarTabsEnum.LoadBalancerView:
+                return <LoadbalancerView />
             case SidBarTabsEnum.SettingsView:
                 return <Settings />
           }
