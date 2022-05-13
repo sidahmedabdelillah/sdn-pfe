@@ -40,5 +40,6 @@ export interface ServerInterface {
 export interface LoadBalancerInterface {
   datapath:string,
   method:number,
-  method_name:string
+  method_name:string,
+  virtual_ip: string
 }
