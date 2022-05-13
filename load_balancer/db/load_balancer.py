@@ -2,6 +2,7 @@ TABLE_NAME = "load_balancers"
 
 
 from typing import List
+from classes.server import Server
 from db import connection
 
 from classes import LoadBalancer
@@ -20,6 +21,25 @@ def get_load_balancers_from_db() -> List[LoadBalancer]:
             load_balancers.append(LoadBalancer(row[0] , row[1], row[2]))
         
         return load_balancers
+
+def get_servers_for_load_balancer_from_db(id: str) -> List[Server] :
+    with connection :
+        servers = []
+        cursor = connection.cursor()
+        print ('SELECT * FROM servers WHERE load_balancer_id = ' , id)
+
+        servers_sql = cursor.execute(
+            """
+            SELECT * FROM servers WHERE load_balancer_id = '{}'
+            """.format(id) 
+        ) 
+
+        for row in servers_sql :
+            servers.append(Server(row[1],row[0],row[2]))
+
+        return servers
+
+
     
 def add_loadbalancer_to_db(dpid: str , method : int,virtual_ip):
     with connection:
