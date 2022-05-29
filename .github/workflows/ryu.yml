@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       
-      - name: should it be skipped?
+      - name: should it be skipped? 
         env:
           COMMIT_FILTER: "build-ryu"
         run: | 
