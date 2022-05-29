@@ -16,7 +16,7 @@ class Server:
     
     def __repr__(self) -> str:
         return self.__str__()
-    
+
 class ServerEncoder(JSONEncoder):
         def default(self, o):
             return o.__dict__

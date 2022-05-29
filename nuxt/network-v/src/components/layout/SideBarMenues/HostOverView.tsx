@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "primereact/button";
 import { Chip } from "primereact/chip";
 import { Tooltip } from "primereact/tooltip";
 
 import { ConfirmDialog } from "primereact/confirmdialog";
 import { confirmDialog } from "primereact/confirmdialog";
+import { Toast } from "primereact/toast";
 
 import { getServer } from "../../../api/serversApi";
 import {
@@ -16,20 +17,25 @@ import useServersStore from "../../../stores/serverStore";
 import useSideBarStore from "../../../stores/sideBarStore";
 import useTopologyStore from "../../../stores/TopologyStore";
 import { HostInterface } from "../../../types/Topology";
+import useLoadBalancersStore from "../../../stores/loadBalancerStore";
+
+const emptyServerToPost = {
+  ip: "",
+  mac: "",
+  port: 0,
+  dpid: "",
+} as {
+  ip: string;
+  mac: string;
+  port: number;
+  dpid: string;
+};
 
 const HostOverView: React.FC = () => {
-  const emptyServerToPost = {
-    ip: "",
-    mac: "",
-    port: 0,
-    dpid: ''
-  } as {
-    ip: string;
-    mac: string;
-    port: number;
-    dpid: string;
-  };
+  const toastRef = useRef<Toast>(null);
+
   const [serverToPost, setServerToPost] = useState(emptyServerToPost);
+
   const { selectedHost } = useSideBarStore();
   const { hosts } = useTopologyStore();
   const {
@@ -40,11 +46,14 @@ const HostOverView: React.FC = () => {
 
   const [host, setHost] = useState<HostInterface>();
   const [isServer, setIsServer] = useState(false);
+  const [isConnectedServerLoadBalancer, setIsConnectedServerLoadBalancer] =
+    useState(false);
 
   const { postServerApi, postServerError } = usePostServerApi(serverToPost);
   const { deleteServerApi, deleteServerError } = useDeleteServerApi(host?.mac);
 
   const { BaseUrl } = useAxiosStore();
+  const { getIsLoadBalancer } = useLoadBalancersStore();
 
   const handlePostClick = () => {
     confirmDialog({
@@ -57,6 +66,13 @@ const HostOverView: React.FC = () => {
 
   const postServer = async () => {
     if (serverToPost !== emptyServerToPost) {
+      if (!isConnectedServerLoadBalancer) {
+        toastRef.current?.show({
+          severity: "error",
+          summary: "Server is not connected to a LoadBalancer",
+        });
+        return
+      }
       postServerApi();
       if (postServerError) {
         console.log("error");
@@ -91,11 +107,13 @@ const HostOverView: React.FC = () => {
 
   useEffect(() => {
     if (host) {
+      const isLoadBalancer = getIsLoadBalancer(host.port.dpid);
+      setIsConnectedServerLoadBalancer(isLoadBalancer);
       setServerToPost({
         ip: host.ipv4[0],
         mac: host.mac,
         port: Number(host.port.port_no),
-        dpid: host.port.dpid
+        dpid: host.port.dpid,
       });
     }
   }, [host]);
@@ -116,6 +134,7 @@ const HostOverView: React.FC = () => {
 
   return (
     <>
+      <Toast ref={toastRef} />
       <ConfirmDialog />
       <div className="mb-8">
         <h1 className="text-[color:var(--primary-color)] text-xl ">

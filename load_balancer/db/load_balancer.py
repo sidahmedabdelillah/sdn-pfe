@@ -26,7 +26,6 @@ def get_servers_for_load_balancer_from_db(id: str) -> List[Server] :
     with connection :
         servers = []
         cursor = connection.cursor()
-        print ('SELECT * FROM servers WHERE load_balancer_id = ' , id)
 
         servers_sql = cursor.execute(
             """
@@ -39,8 +38,15 @@ def get_servers_for_load_balancer_from_db(id: str) -> List[Server] :
 
         return servers
 
+def delete_servers_for_load_balancer_from_db(id: str):
+    with connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            DELETE FROM servers where load_balancer_id = '{}'
+            """.format(id)
+        )
 
-    
 def add_loadbalancer_to_db(dpid: str , method : int,virtual_ip):
     with connection:
         cursor = connection.cursor()
@@ -49,10 +55,18 @@ def add_loadbalancer_to_db(dpid: str , method : int,virtual_ip):
         cursor.execute(sql , (dpid,method,virtual_ip))
         return LoadBalancer(dpid,method,virtual_ip)
 
+
+
 def delete_loadbalancer_from_db(dpid:str):
     with connection:
         cursor = connection.cursor()
 
         sql = "DELETE FROM {} WHERE id = '{}'".format(TABLE_NAME,dpid)
         cursor.execute(sql)
+        cursor.execute(
+            """
+            DELETE FROM servers where load_balancer_id = '{}'
+            """.format(id)
+        )
+        
         return get_load_balancers_from_db()

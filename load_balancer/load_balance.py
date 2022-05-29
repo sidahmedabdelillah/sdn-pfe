@@ -103,11 +103,12 @@ class LoadBalncer(app_manager.RyuApp):
         parser = datapath.ofproto_parser
 
         for dst in self.mac_to_port[datapath.id].keys():
-            match = parser.OFPMatch(eth_dst=dst)
+            match = parser.OFPMatch()
             mod = parser.OFPFlowMod(
                 datapath, command=ofproto.OFPFC_DELETE,
                 out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY,
                 priority=1, match=match)
+                
             datapath.send_msg(mod)
     
     def get_load_balancer_from_datapath(self , datapath: Datapath):
@@ -147,7 +148,7 @@ class LoadBalncer(app_manager.RyuApp):
         server_index = int_mac % server_count
         return servers[server_index]
 
-    def get_server_with_mac(self ,mac):
+    def get_server_with_mac(self ,mac) -> Server:
         for server in self.servers:
             if server.mac == mac : return server
 
@@ -209,7 +210,7 @@ class LoadBalncer(app_manager.RyuApp):
         # event message
         msg = ev.msg
         # event datapath (switch)
-        datapath = msg.datapath
+        datapath : Datapath = msg.datapath
         # event openflow protocol
         ofproto = datapath.ofproto
         # protocol parser

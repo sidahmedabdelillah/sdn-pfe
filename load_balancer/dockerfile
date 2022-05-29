@@ -13,9 +13,7 @@ RUN   pip install ryu
 
 EXPOSE 6633/tcp
 
-
 RUN mkdir /app
-
 
 WORKDIR /app
 
