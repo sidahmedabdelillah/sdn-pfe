@@ -102,7 +102,11 @@ class LoadBalncer(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
+        self.logger.info('-----------------------------')
+        self.logger.info('----- DELETING FLOWS---------')
+
         for dst in self.mac_to_port[datapath.id].keys():
+            self.logger.info('----- DELETING FLOWS FOR +' + dst.id +'---------')
             match = parser.OFPMatch()
             mod = parser.OFPFlowMod(
                 datapath, command=ofproto.OFPFC_DELETE,
@@ -110,6 +114,9 @@ class LoadBalncer(app_manager.RyuApp):
                 priority=1, match=match)
                 
             datapath.send_msg(mod)
+
+        self.logger.info('----- DELETING FLOWS---------')
+        self.logger.info('-----------------------------')
     
     def get_load_balancer_from_datapath(self , datapath: Datapath):
         for lb in self.load_balancers:
