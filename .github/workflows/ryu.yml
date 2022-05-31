@@ -46,6 +46,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: abdoubentegar/ryu-load-balancer,abdoubentegar/ryu-load-balancer:0.4
+          tags: abdoubentegar/ryu-load-balancer,abdoubentegar/ryu-load-balancer:0.4.1
           file: load_balancer/dockerfile
           context: ./load_balancer

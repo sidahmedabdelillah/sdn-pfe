@@ -202,6 +202,8 @@ class LoadBalncer(app_manager.RyuApp):
     # handle packetIn event (no flow match)
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
+        self.logger.info("***************************")
+        self.logger.info("---Handle Packet In ---")
         # If you hit this you might want to increase
         # the "miss_send_length" of your switch
         if ev.msg.msg_len < ev.msg.total_len:
@@ -270,35 +272,41 @@ class LoadBalncer(app_manager.RyuApp):
 
         # Handle ARP Packet
         if eth.ethertype == ether_types.ETH_TYPE_ARP:
+            self.logger.info("***************************")
+            self.logger.info("---Handle ARP Packet Initial---")
             arp_header = pkt.get_protocol(arp.arp)
+            load_balancer =  self.get_load_balancer_from_datapath(datapath)
 
-            # TODO change this
-            if arp_header.dst_ip == self.VIRTUAL_IP and arp_header.opcode == arp.ARP_REQUEST:
-                self.logger.info("***************************")
-                self.logger.info("---Handle ARP Packet---")
-                # Build an ARP reply packet using source IP and source MAC
-                reply_packet = self.generate_arp_reply(arp_header.src_ip, arp_header.src_mac , datapath)
+            if(load_balancer != None ):
+                if arp_header.dst_ip == load_balancer.virtual_ip and arp_header.opcode == arp.ARP_REQUEST:
+                    self.logger.info("***************************")
+                    self.logger.info("---Handle ARP Packet for ip " + load_balancer.virtual_ip + " ---" )
+                    # Build an ARP reply packet using source IP and source MAC
+                    reply_packet = self.generate_arp_reply(arp_header.src_ip, arp_header.src_mac , datapath)
 
-                if (not reply_packet): return
-                actions = [parser.OFPActionOutput(in_port)]
-                packet_out = parser.OFPPacketOut(datapath=datapath, in_port=ofproto.OFPP_ANY,
-                                                 data=reply_packet.data, actions=actions, buffer_id=0xffffffff)
-                datapath.send_msg(packet_out)
-                self.logger.info("Sent the ARP reply packet")
-                return
+                    if (not reply_packet): return
+                    actions = [parser.OFPActionOutput(in_port)]
+                    packet_out = parser.OFPPacketOut(datapath=datapath, in_port=ofproto.OFPP_ANY,
+                                                    data=reply_packet.data, actions=actions, buffer_id=0xffffffff)
+                    datapath.send_msg(packet_out)
+                    self.logger.info("Sent the ARP reply packet")
+                    self.logger.info("***************************")
+
+                    return
 
         # Handle TCP Packet
-        if eth.ethertype == ETH_TYPE_IP:
+        # return 
+        if eth.ethertype == ETH_TYPE_IP  :
             self.logger.info("***************************")
-            self.logger.info("---Handle TCP Packet---")
+            self.logger.info("---Handle TCP Packet Initial---")
             ip_header = pkt.get_protocol(ipv4.ipv4)
             self.logger.info(ip_header)
 
             # send to the function
             # handle_tcp_packet(self, datapath, in_port, ip_header, parser, dst_mac, src_mac):
             packet_handled = self.handle_tcp_packet(datapath, in_port, ip_header, parser, dst_mac, src_mac)
-            self.logger.info("my-log in_port=%s ,  eth_type=%s , ip_proto=%s ,ipv4_dst=%s", in_port, ETH_TYPE_IP, ip_header.proto, self.VIRTUAL_IP)
             self.logger.info("TCP packet handled: " + str(packet_handled))
+            self.logger.info("***************************")
             if packet_handled:
                 return
 
@@ -366,12 +374,20 @@ class LoadBalncer(app_manager.RyuApp):
     def handle_tcp_packet(self, datapath, in_port, ip_header, parser, dst_mac, src_mac):
         packet_handled = False
 
+        load_balancer =  self.get_load_balancer_from_datapath(datapath)
+    
+        if(load_balancer == None) :
+            print('no load balancer')
+
         # if the packet is for the VIRTUAL_IP
         # TODO this
-        if ip_header.dst == self.VIRTUAL_IP:
+        if ip_header.dst == load_balancer.virtual_ip:
+            self.logger.info("---Load Balancer Found Handeling TCP---")
 
             # find the packet with the chosen mac
             chosen_server = self.get_server_with_mac(dst_mac)
+            self.logger.info(chosen_server)
+            
 
             if(not chosen_server):
                 self.logger.error('Requested server Not found')
@@ -389,7 +405,7 @@ class LoadBalncer(app_manager.RyuApp):
             #           ip_propotocl: protocol_header
             #           ipv4 _dst= 10.0.0.100
 
-            match = parser.OFPMatch(in_port=in_port, eth_type=ETH_TYPE_IP, ipv4_dst=self.VIRTUAL_IP)
+            match = parser.OFPMatch(in_port=in_port, eth_type=ETH_TYPE_IP, ipv4_dst=load_balancer.virtual_ip)
 
             # create an action to change the ip address and output the packet
             actions = [parser.OFPActionSetField(ipv4_dst=server_dst_ip),
@@ -408,7 +424,7 @@ class LoadBalncer(app_manager.RyuApp):
                                     ipv4_src=server_dst_ip,
                                     eth_dst=src_mac)
                                     
-            actions = [parser.OFPActionSetField(ipv4_src=self.VIRTUAL_IP),
+            actions = [parser.OFPActionSetField(ipv4_src=load_balancer.virtual_ip),
                        parser.OFPActionOutput(in_port)]
 
             self.logger.warning('adding-flow from handle tcp reverse')
