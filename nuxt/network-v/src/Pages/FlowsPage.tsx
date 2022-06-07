@@ -6,6 +6,12 @@ const FlowPage: React.FC = () => {
   const { dpid } = useParams();
   const { data } = useFlowsApi(dpid);
 
+  const [ dpidNumber , setDpidNumber ] = useState(parseInt(dpid,16))
+
+
+  
+  
+
   return (
     <div className="relative overflow-x-auto shadow-md h-full ">
       <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -20,7 +26,7 @@ const FlowPage: React.FC = () => {
         </thead>
 
         <tbody>
-          {data?.[1].map((flow, index) => (
+          {data?.[dpidNumber].map((flow, index) => (
             <tr
               key={index}
               className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"

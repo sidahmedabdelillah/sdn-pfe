@@ -7,6 +7,6 @@ export function useFlowsApi (dpid: string ){
 
     const { data , error } = useAxiosGet<FlowsResponse>(`stats/flowdesc/${dpidInt}`)
 
-
+    
     return {data}
 } 

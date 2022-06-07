@@ -1,13 +1,5 @@
-export interface FlowsResponse {
-    "1": The1[];
-    "2": The1[];
-    "3": The1[];
-    "4": The1[];
-    "5": The1[];
-    "6": The1[];
-    "7": The1[];
-    "8": The1[];
-}
+
+export type FlowsResponse = Record< number , The1[] >
 
 export interface The1 {
     priority:      number;
