@@ -3,23 +3,25 @@ import { TabMenu, TabMenuTabChangeParams } from 'primereact/tabmenu';
 
 import './TopBar.scss'
 import useSideBarStore, { SidBarTabsEnum } from '../../stores/sideBarStore';
+import { useNavigate } from 'react-router-dom';
 const TopBar = () => {
-
+    const navigate = useNavigate()
     const [ activeIndex, setActiveIndex ] = useState(0)
     const { setActiveTab } = useSideBarStore()
 
     const items = [
         {label: 'Topology', icon: 'pi pi-fw pi-sitemap'},
         {label: 'Settings', icon: 'pi pi-fw pi-cog'},
-
-
     ];
+
+    
 
     const handleTabChange = (e : TabMenuTabChangeParams) => {
         switch(e.index){
             case 0 : 
                 setActiveTab(SidBarTabsEnum.TopologyOverView);
                 setActiveIndex(e.index)
+                navigate('/')
                 break ;
             case 1 : 
                 setActiveTab(SidBarTabsEnum.SettingsView);

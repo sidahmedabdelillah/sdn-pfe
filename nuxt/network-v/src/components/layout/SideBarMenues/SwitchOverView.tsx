@@ -226,10 +226,8 @@ const SwitchOverView: React.FC = () => {
 
       {!isLoadBalancer && (
         <>
-          <Chip label="Ports" className="mt-4" />
-          {switche.ports.map((port) => (
-            <p key={port.hw_addr}>{port.name}</p>
-          ))}
+          <Chip label="Number Of Ports" className="mt-4" />
+          <p>{ switche.ports.length }</p>
         </>
       )}
 

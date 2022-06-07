@@ -2,6 +2,8 @@
 
 // pages
 import ToplogyPage from './Pages/TopologyPage'
+import FlowPage from './Pages/FlowsPage'
+
 // other
 import {FC} from "react";
 import { isConstructorDeclaration } from 'typescript';
@@ -23,6 +25,13 @@ const routes: Array<Route> = [
         enabled: true,
         component: ToplogyPage
     },
+    {
+        key: 'switch-flows',
+        title: 'Switch Flows',
+        path: '/flows/:dpid',
+        enabled: true,
+        component: FlowPage
+    }
 ]
 
 export default routes

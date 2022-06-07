@@ -21,6 +21,7 @@ import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { validateIpAddress } from "../../../utils/validators/validateIp";
 import snakeToPascal from "../../../utils/snakeToCamel";
+import { useNavigate } from "react-router-dom";
 
 const emptyLoadBalancerToPost = {
   dpid: "",
@@ -33,6 +34,7 @@ const emptyLoadBalancerToPost = {
 const LoadBalancerView: React.FC = () => {
   const toastRef = useRef<Toast>(null)
   const { BaseUrl } = useAxiosStore();
+  const navigate = useNavigate()
 
   const [switche, setSwitch] = useState<SwitchInterface | null>(null);
   const [loadBalancer, setLoadBalancer] = useState<LoadBalancerInterface | null>(null)
@@ -40,8 +42,12 @@ const LoadBalancerView: React.FC = () => {
   const { selectedHost } = useSideBarStore();
   const { switches } = useTopologyStore();
 
+  const navigateToFlows = () => {
+    const path = `/flows/${switche?.dpid}`
+    navigate(path)
+  }
+
   const {
-    loadBalancers,
     getLoadBalancer,
     setLoadBalancers: setStoreLoadBalancers,
   } = useLoadBalancersStore();
@@ -106,6 +112,12 @@ const LoadBalancerView: React.FC = () => {
             tooltip="There is something wrong with this Switch"
           />
         )}
+
+        <div className="flex justify-between">
+          <Button onClick={navigateToFlows}>
+            View Flows
+          </Button>
+        </div>
       </div>
 
       <Chip label="Switch DPID" />
@@ -117,9 +129,12 @@ const LoadBalancerView: React.FC = () => {
       <Chip label="Load Balancer Method" />
       <p> { loadBalancer?.method_name && snakeToPascal(loadBalancer?.method_name)} </p>
 
-    
+      <Chip label="Number Of Ports" className="mt-4" />
+      <p>{ switche.ports.length }</p>
+
+
+      
       <Button className="mt-4" onClick={handleDeleteClick}>
-        {" "}
         Remove server from server cluster{" "}
       </Button>
       
