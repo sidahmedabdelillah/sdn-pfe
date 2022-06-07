@@ -22,7 +22,7 @@ COPY ./ .
 WORKDIR /app
 RUN ls /usr/local/bin
 
-CMD /usr/local/bin/ryu   run ./load_balance.py ./rest_topology.py ./ofctl_rest --observe-links
+CMD /usr/local/bin/ryu   run ./load_balance.py ./rest_topology.py ./ofctl_rest.py --observe-links
 
 
 
